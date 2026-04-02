@@ -109,6 +109,4 @@ Issue 中建议至少包含：
 - 影响范围
 - 验收标准（Definition of Done）
 
----
-本 README 作为仓库级入口说明；协议细节以 `skill编写规范.md` 为准。
 
