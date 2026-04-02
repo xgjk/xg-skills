@@ -13,7 +13,6 @@
 
 环境变量：
   XG_USER_TOKEN  — access-token（必须）
-  SKILL_API_BASE — 后端地址（默认 http://localhost:8787）
 """
 
 import sys
@@ -26,8 +25,9 @@ import warnings
 # 禁用 InsecureRequestWarning (因为 verify=False)
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
-API_BASE = os.environ.get("SKILL_API_BASE", "http://localhost:8787")
-API_URL = f"{API_BASE}/api/skill/delete"
+API_BASE = "https://skills.mediportal.com.cn"
+
+API_URL = f"{API_BASE.rstrip('/')}/api/skill/delete"
 
 
 def call_api(token: str, skill_id: str, reason: str = "") -> dict:

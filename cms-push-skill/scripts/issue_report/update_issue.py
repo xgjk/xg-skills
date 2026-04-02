@@ -17,7 +17,6 @@
     --status closed
 
 环境变量：
-  SKILL_API_BASE  — 技能管理平台后端地址（默认 http://localhost:8787）
   XG_USER_TOKEN   — access-token（必须）
 """
 
@@ -29,7 +28,7 @@ import urllib.request
 import urllib.error
 import ssl
 
-API_BASE = os.environ.get("SKILL_API_BASE", "http://localhost:8787")
+API_BASE = "https://skills.mediportal.com.cn"
 
 
 def _ssl_context():

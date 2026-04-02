@@ -36,7 +36,6 @@
 
 环境变量：
   XG_USER_TOKEN  — access-token（必须）
-  SKILL_API_BASE — 后端地址（默认 http://localhost:8787）
 """
 
 import sys
@@ -59,8 +58,9 @@ from upload_to_qiniu import get_qiniu_token, upload_file
 from register_skill import call_api as register_api
 from update_skill import call_api as update_api
 
-API_BASE = os.environ.get("SKILL_API_BASE", "http://localhost:8787")
-ROBOT_SYNC_URL = f"{API_BASE}/api/robot/skill-sync"
+API_BASE = "https://skills.mediportal.com.cn"
+
+ROBOT_SYNC_URL = f"{API_BASE.rstrip('/')}/api/robot/skill-sync"
 
 EXTERNAL_DOWNLOAD_URL_TEMPLATE = "https://wry-manatee-359.convex.site/api/v1/download?slug={}"
 

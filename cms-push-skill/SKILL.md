@@ -6,6 +6,8 @@ dependencies:
   - cms-auth-skills
 ---
 
+**当前版本**: v1.0.2
+
 # cms-push-skill
 
 两大职责：① 将已完成的 Skill 推送到平台；② 问题反馈与状态管理。
@@ -93,7 +95,6 @@ open → resolved → closed
 ## 环境变量
 
 - `XG_USER_TOKEN` — access-token（推送和问题状态更新必须）
-- `SKILL_API_BASE` — 后端地址（默认 http://localhost:8787）
 
 ## 能力树
 
