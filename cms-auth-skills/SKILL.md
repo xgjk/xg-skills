@@ -7,7 +7,7 @@ priority: 1
 
 # cms基础 Skill — 授权基础层
 
-**版本**: v2.3
+**版本**: v2.3.0
 
 > **⚠️ 重要：所有业务接口 header 中要求传入 `appKey` 或 `access-token` 的，都必须且只能通过本 Skill（`cms-auth-skills`）获取，严禁自行拼接、硬编码或通过其他方式获取鉴权值。**
 
