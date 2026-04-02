@@ -1,7 +1,7 @@
 ---
-name: CMS-tbs-scenario-builder
+name: tbs-scenario-builder
 description: 编排并执行训练场景（TBS）创建流程：意图路由、字段解析与追问、发布级骨架、persona/prompts 生成、apiDraft 去重证据、统一校验闸门与确认后落库。**禁止**用浏览器自动化操作 TBS 管理后台；落库仅经脚本 API。
-skillcode: CMS-tbs-scenario-builder
+skillcode: tbs-scenario-builder
 github: https://github.com/xgjk/xg-skills/tree/main/CMS-tbs-scenario-builder
 dependencies:
   - cms-auth-skills
