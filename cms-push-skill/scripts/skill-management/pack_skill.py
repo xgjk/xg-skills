@@ -25,7 +25,7 @@ import argparse
 import zipfile
 
 
-def pack_skill(skill_dir: str, output_path: str) -> str:
+def pack_skill(skill_dir: str, output_path: str, emit_stdout: bool = False) -> str:
     """将 Skill 目录打包为 ZIP"""
     skill_dir = os.path.abspath(skill_dir)
     if not os.path.isdir(skill_dir):
@@ -38,6 +38,7 @@ def pack_skill(skill_dir: str, output_path: str) -> str:
 
     skill_name = os.path.basename(skill_dir)
     output_path = os.path.abspath(output_path)
+    output_path_real = os.path.realpath(output_path)
 
     # 确保输出目录存在
     output_dir = os.path.dirname(output_path)
@@ -53,6 +54,8 @@ def pack_skill(skill_dir: str, output_path: str) -> str:
                 if f.startswith(".") or f.endswith(".pyc"):
                     continue
                 full_path = os.path.join(root, f)
+                if os.path.realpath(full_path) == output_path_real:
+                    continue
                 arc_name = os.path.join(skill_name, os.path.relpath(full_path, skill_dir))
                 zf.write(full_path, arc_name)
                 file_count += 1
@@ -62,7 +65,8 @@ def pack_skill(skill_dir: str, output_path: str) -> str:
     print(f"文件数: {file_count}，大小: {size_kb:.1f} KB", file=sys.stderr)
 
     # 输出 ZIP 路径到 stdout（方便管道传给下一步）
-    print(output_path)
+    if emit_stdout:
+        print(output_path)
     return output_path
 
 
@@ -77,7 +81,7 @@ def main():
         skill_name = os.path.basename(os.path.abspath(args.skill_dir))
         output = f"{skill_name}.zip"
 
-    pack_skill(args.skill_dir, output)
+    pack_skill(args.skill_dir, output, emit_stdout=True)
 
 
 if __name__ == "__main__":

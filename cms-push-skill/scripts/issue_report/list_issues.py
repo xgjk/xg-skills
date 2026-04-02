@@ -17,7 +17,8 @@ import urllib.request
 import urllib.error
 import ssl
 
-API_BASE = "https://skills.mediportal.com.cn"
+DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
+API_BASE = os.environ.get("XG_SKILL_API_BASE") or os.environ.get("API_BASE") or DEFAULT_API_BASE
 
 
 def _ssl_context():
@@ -30,7 +31,12 @@ def _ssl_context():
 def _get_auth_headers():
     """获取认证头（如果有 access-token）"""
     headers = {"Content-Type": "application/json"}
-    token = os.environ.get("XG_USER_TOKEN", "")
+    token = (
+        os.environ.get("XG_USER_TOKEN")
+        or os.environ.get("access-token")
+        or os.environ.get("ACCESS_TOKEN")
+        or ""
+    )
     if token:
         headers["access-token"] = token
     return headers

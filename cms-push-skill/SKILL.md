@@ -1,12 +1,12 @@
 ---
 name: cms-push-skill
-description: CMS Skill 推送工具 — 将已创建的 Skill 打包、上传、注册/更新/下架到平台，同步到 ClawHub 和 GitHub；同时包含问题反馈与状态管理
+description: CMS Skill 推送工具 — 发布、更新，或者是发布到我们的平台。将已创建的 Skill 打包、上传、注册/更新/下架到平台，同步到 ClawHub 和 GitHub；同时包含问题反馈与状态管理
 skillCode: cms-push-skill
 dependencies:
   - cms-auth-skills
 ---
 
-**当前版本**: v1.0.2
+**当前版本**: v1.0.6
 
 # cms-push-skill
 

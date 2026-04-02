@@ -39,7 +39,8 @@ import ssl
 import functools
 
 # 技能管理平台后端地址
-API_BASE = "https://skills.mediportal.com.cn"
+DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
+API_BASE = os.environ.get("XG_SKILL_API_BASE") or os.environ.get("API_BASE") or DEFAULT_API_BASE
 REPORT_ENDPOINT = "/api/skill/issues/report"
 
 
@@ -53,7 +54,12 @@ def _ssl_context():
 def _get_auth_headers():
     """获取认证头（如果有 access-token）"""
     headers = {"Content-Type": "application/json"}
-    token = os.environ.get("XG_USER_TOKEN", "")
+    token = (
+        os.environ.get("XG_USER_TOKEN")
+        or os.environ.get("access-token")
+        or os.environ.get("ACCESS_TOKEN")
+        or ""
+    )
     if token:
         headers["access-token"] = token
     return headers
@@ -86,7 +92,7 @@ def report_issue(
         user_message:      用户描述的问题（与 error_message 至少填一个）
         context:           附加上下文信息（可选，如参数、环境等）
         severity:          严重级别：error / warning / info（默认 error）
-        api_base:          后端地址（可选，默认从环境变量或 localhost:8787）
+        api_base:          后端地址（可选）
 
     Returns:
         dict: API 响应
@@ -186,7 +192,7 @@ def main():
     parser.add_argument("--message", "-m", default="", help="用户描述的问题")
     parser.add_argument("--severity", "-s", default="error", choices=["error", "warning", "info"], help="严重级别")
     parser.add_argument("--stdin", action="store_true", help="从 stdin 读取错误信息（追加到 --error）")
-    parser.add_argument("--api-base", default="", help="后端地址（默认 http://localhost:8787）")
+    parser.add_argument("--api-base", default="", help="后端地址（默认 https://skills.mediportal.com.cn）")
     args = parser.parse_args()
 
     error_msg = args.error

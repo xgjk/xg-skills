@@ -30,9 +30,18 @@ import warnings
 # 禁用 InsecureRequestWarning (因为 verify=False)
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
-API_BASE = "https://skills.mediportal.com.cn"
+DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
+API_BASE = os.environ.get("XG_SKILL_API_BASE") or os.environ.get("API_BASE") or DEFAULT_API_BASE
 
 API_URL = f"{API_BASE.rstrip('/')}/api/skill/register"
+
+
+def parse_api_response(response: requests.Response, action: str) -> dict:
+    data = response.json()
+    if isinstance(data, dict) and data.get("resultCode") not in (None, 1):
+        message = data.get("resultMsg") or data.get("detailMsg") or response.text
+        raise RuntimeError(f"{action}失败: {message}")
+    return data
 
 
 def call_api(token: str, payload: dict) -> dict:
@@ -52,7 +61,7 @@ def call_api(token: str, payload: dict) -> dict:
             timeout=60,
         )
         response.raise_for_status()
-        return response.json()
+        return parse_api_response(response, "注册 Skill")
     except Exception as e:
         print(f"错误: 请求失败: {e}", file=sys.stderr)
         sys.exit(1)
@@ -82,12 +91,6 @@ def build_clawhub_payload(args) -> dict:
 
 
 def main():
-    token = os.environ.get("XG_USER_TOKEN") or os.environ.get("access-token") or os.environ.get("ACCESS_TOKEN")
-
-    if not token:
-        print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
-        sys.exit(1)
-
     parser = argparse.ArgumentParser(description="发布（注册）新 Skill")
     parser.add_argument("--code", required=True, help="Skill 唯一标识")
     parser.add_argument("--name", required=True, help="Skill 显示名称")
@@ -97,6 +100,11 @@ def main():
     parser.add_argument("--internal", action="store_true", help="标记为内部 Skill")
     parser.add_argument("--version", default="0.0.1", help="版本号（semver，默认 0.0.1）")
     args = parser.parse_args()
+
+    token = os.environ.get("XG_USER_TOKEN") or os.environ.get("access-token") or os.environ.get("ACCESS_TOKEN")
+    if not token:
+        print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
+        sys.exit(1)
 
     payload = build_clawhub_payload(args)
     result = call_api(token, payload)
