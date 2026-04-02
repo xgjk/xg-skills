@@ -6,7 +6,7 @@ dependencies:
   - cms-auth-skills
 ---
 
-**当前版本**: v1.0.6
+**当前版本**: v1.0.7
 
 # cms-push-skill
 
