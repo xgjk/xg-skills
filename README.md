@@ -37,59 +37,30 @@ xg-skills/
     └── scripts/
 ```
 
-## Skill 包内部结构（强约束）
+## Skill 规范（精简版）
 
-每个 `(<skill-name>/)` 内部必须包含以下目录与文件，并保持协议中的强绑定关系：
+README 只保留最低必要规则，详细协议统一以 `skill编写规范.md` 为准。
 
-- `SKILL.md`：主索引（只描述能力与路由入口，不写具体接口参数细节）
-- `common/`：基础层固定内容（鉴权规范 + 通用约束）
-- `openapi/`：文档层（模块索引 + 每个 endpoint 独立文档）
-- `examples/`：引导层（模块的触发场景与标准流程）
-- `scripts/`：执行层（模块脚本清单 + 每个 endpoint 一个 Python 脚本）
+### 最小要求（必须）
 
-必须满足 1:1 绑定关系：
+- 每个 skill 为独立目录，且包含 `SKILL.md`
+- `openapi/` 与 `scripts/` 保持 endpoint 1:1 对应
+- `scripts/` 统一使用 Python（`.py`）
+- 不允许残留占位符（如 `<module>` / `<endpoint>`）
 
-- `openapi/<module>/<endpoint>.md` ↔ `scripts/<module>/<endpoint>.py`
+### 命名建议
 
-并且协议要求：
+- `skill-name`：英文短横线风格（如 `cms-auth-skills`）
+- `module`：英文小写/短横线风格
+- `endpoint`：英文短词/短横线风格
 
-- 占位符（如 `<module>`、`<endpoint>`、`<skill-name>`）在最终产物中不得残留
-- 所有 `scripts/` 下的脚本必须为 Python（`.py`）
-- 每个 endpoint 脚本的输入字段与文档中的参数表必须一致
-- 所有接口调用必须通过脚本执行，不允许跳过脚本直接调用 API
+### 新增/更新流程（3 步）
 
-> 详细的格式模板、生成流水线、自检清单与“禁止项”，以 `skill编写规范.md` 为准。
+1. 建立/更新 skill 目录（含 `SKILL.md`, `openapi/`, `scripts/` 等）
+2. 补齐文档与脚本映射（`openapi/*` ↔ `scripts/*`）
+3. 自检并提交（结构完整、命名规范、可执行）
 
-## 命名规范（建议）
-
-- `<skill-name>`：英文为主，使用短横线分词（如 `demo-weather`、`im-robot`）
-- `<module>`：英文小写/短横线风格（如 `forecast`）
-- `<endpoint>`：英文短词/短横线风格（如 `get-current`）
-
-## 如何新增/更新一个 Skill（简版流程）
-
-1. 新建 `<skill-name>/` 目录骨架（包含 `common/`、`openapi/`、`examples/`、`scripts/` 等）
-2. 将协议要求的固定文件**原样复制**到对应路径（可从 `templates/` 复制，但最终必须落到每个 skill 内）
-3. 逐个模块编写：
-   - `openapi/<module>/api-index.md`
-   - `openapi/<module>/<endpoint>.md`
-   - `examples/<module>/README.md`
-   - `scripts/<module>/<endpoint>.py`
-   - `scripts/<module>/README.md`
-4. 更新 `SKILL.md`（能力概览、路由表、能力树）
-5. 完成协议自检（结构齐全、1:1 绑定一致、无占位符、脚本语言与输出规则、超时重试策略等）
-
-## 验收标准（必须通过）
-
-- 目录结构齐全且与协议一致
-- 固定文件未被修改（逐字一致）
-- endpoint 文档与脚本路径严格对应（1:1）
-- 脚本满足协议约束：必须为 Python、输出需经过 `toon_encoder.py` 的 TOON 编码、鉴权遵循协议方式、无占位符/无绝对路径
-
-## 维护建议（可选）
-
-- `skills-index.md`：如果你们希望对外快速浏览所有 skill，可以维护一个全局索引文件（列出 skill 名称与一句话能力摘要）
-- 可加入“模板一致性校验脚本”（只验证模板与固定文件是否一致，不参与业务逻辑）
+> 详细格式、自检清单与禁止项请查看：`skill编写规范.md`
 
 ## Issue 提报与协作规范（推荐）
 
