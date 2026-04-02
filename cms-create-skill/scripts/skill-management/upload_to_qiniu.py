@@ -34,52 +34,32 @@ import warnings
 # 禁用 InsecureRequestWarning (因为 verify=False)
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
+DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
+API_BASE = os.environ.get("XG_SKILL_API_BASE") or os.environ.get("API_BASE") or DEFAULT_API_BASE
+
 # 七牛上传凭证接口
-QINIU_AUTH_URL = "https://sg-cwork-api.mediportal.com.cn/ai-business/qiNiu/getSimpleUploadCredentials"
+QINIU_AUTH_URL = f"{API_BASE.rstrip('/')}/api/qiniu/token"
 
 # 七牛上传地址（z2 区域）
 QINIU_UPLOAD_URL = "https://up-z2.qiniup.com/"
 
 
+def parse_api_response(response: requests.Response, action: str) -> dict:
+    data = response.json()
+    if isinstance(data, dict) and data.get("resultCode") not in (None, 1):
+        message = data.get("resultMsg") or data.get("detailMsg") or response.text
+        raise RuntimeError(f"{action}失败: {message}")
+    return data
+
+
 def get_qiniu_token(access_token: str, file_key: str, corp_id: str = "") -> dict:
-    """
-    获取七牛上传凭证，返回 {token, domain}。
-    与前端逻辑一致：先 GET，GET 不支持则 fallback 到 POST。
-    """
+    """获取七牛上传凭证，返回 {token, domain}。"""
     headers = {
         "access-token": access_token,
         "Content-Type": "application/json",
     }
     params = {"fileKey": file_key, "corpId": corp_id}
 
-    try:
-        # ── 尝试 GET ──
-        response = requests.get(
-            QINIU_AUTH_URL,
-            params=params,
-            headers=headers,
-            verify=False,
-            allow_redirects=True,
-            timeout=60,
-        )
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("data") and data["data"].get("token") and data["data"].get("domain"):
-                return data["data"]
-            
-            msg = (data.get("resultMsg") or data.get("detailMsg") or "").lower()
-            if "not supported" not in msg and "method not allowed" not in msg:
-                raise RuntimeError(f"获取七牛凭证失败 (GET): {response.text}")
-        elif response.status_code != 405:
-            response.raise_for_status()
-    except Exception as e:
-        if isinstance(e, requests.exceptions.HTTPError) and e.response.status_code == 405:
-            pass # Continue to POST
-        else:
-            raise
-
-    # ── Fallback POST ──
-    print("GET 方式不支持，尝试 POST ...", file=sys.stderr)
     try:
         response = requests.post(
             QINIU_AUTH_URL,
@@ -90,12 +70,12 @@ def get_qiniu_token(access_token: str, file_key: str, corp_id: str = "") -> dict
             timeout=60,
         )
         response.raise_for_status()
-        data = response.json()
-        if not data.get("data") or not data["data"].get("token"):
-            raise RuntimeError(f"获取七牛凭证失败 (POST): {response.text}")
+        data = parse_api_response(response, "获取七牛凭证")
+        if not data.get("data") or not data["data"].get("token") or not data["data"].get("domain"):
+            raise RuntimeError(f"获取七牛凭证失败: {response.text}")
         return data["data"]
     except Exception as e:
-        raise RuntimeError(f"获取七牛凭证失败 (POST): {e}")
+        raise RuntimeError(f"获取七牛凭证失败: {e}")
 
 
 def upload_file(qiniu_token: str, file_key: str, file_path: str) -> bool:
@@ -139,19 +119,18 @@ def upload_file(qiniu_token: str, file_key: str, file_path: str) -> bool:
 
 
 def main():
-    token = os.environ.get("XG_USER_TOKEN") or os.environ.get("access-token") or os.environ.get("ACCESS_TOKEN")
-    if not token:
-        print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
-        sys.exit(1)
-
-    corp_id = os.environ.get("XG_CORP_ID", "")
-
     parser = argparse.ArgumentParser(description="上传文件到七牛云存储")
     parser.add_argument("file_path", help="要上传的文件路径")
     parser.add_argument("--file-key", default="", help="七牛文件 key（默认自动生成）")
     parser.add_argument("--corp-id", default="", help="企业 ID（也可通过 XG_CORP_ID 环境变量设置）")
     args = parser.parse_args()
 
+    token = os.environ.get("XG_USER_TOKEN") or os.environ.get("access-token") or os.environ.get("ACCESS_TOKEN")
+    if not token:
+        print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
+        sys.exit(1)
+
+    corp_id = os.environ.get("XG_CORP_ID", "")
     corp_id = args.corp_id or corp_id
 
     file_path = os.path.abspath(args.file_path)

@@ -1,4 +1,4 @@
-# POST https://sg-cwork-api.mediportal.com.cn/im/skill/delete
+# POST https://skills.mediportal.com.cn/api/skill/delete
 
 ## 作用
 
@@ -23,7 +23,7 @@
 ## 请求示例
 
 ``` 
-POST /im/skill/delete?id=123&delistReason=已废弃
+POST /api/skill/delete?id=123&delistReason=已废弃
 ```
 
 ## 响应 Schema

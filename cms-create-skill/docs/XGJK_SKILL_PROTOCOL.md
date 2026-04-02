@@ -60,9 +60,7 @@ SKILL.md（索引层）
   │
   ├── dependencies → cms-auth-skills   ← 基础授权层
   │                        │
-  │                        ├── 引用 → cms-auth-skills/common/conventions.md
-  │                        ├── 引用 → cms-auth-skills/common/auth.md
-  │                        └── 引用 → cms-auth-skills/openapi/auth/*.md
+  │                        └── 引用 → cms-auth-skills/SKILL.md
   │
   └── 路由 → openapi/<module>/api-index.md（文档层 — 模块入口）
                 │
@@ -89,18 +87,17 @@ SKILL.md（索引层）
 - `endpoint.py` 的 API 路径 → 必须与 `endpoint.md` 中的 URL 一致
 - `endpoint.py` 的 `AUTH_MODE`、请求头与鉴权环境变量 → 必须与 `endpoint.md` 中声明的"鉴权类型"完全一致
 
-**说明**：授权接口文档统一由外部依赖 `cms-auth-skills/openapi/auth/*.md` 提供，不在目标 Skill 内重复生成。
+**说明**：鉴权规则、授权入口与安装说明统一由外部依赖 `cms-auth-skills/SKILL.md` 提供，不在目标 Skill 内重复生成。
 
 ### 1.4 依赖文件与动态文件
 
 | 路径 | 性质 | 来源 | 说明 |
 |---|---|---|---|
 | `SKILL.md` 中的 `dependencies: - cms-auth-skills` | **固定要求** | 附录 A-C | 所有需要鉴权能力的 Skill 都必须声明此依赖 |
-| `cms-auth-skills/common/*` | **外部依赖** | 由 `cms-auth-skills` 提供 | 基础层：鉴权规范与通用约束 |
-| `cms-auth-skills/openapi/auth/*` | **外部依赖** | 由 `cms-auth-skills` 提供 | 授权接口参考文档 |
+| `cms-auth-skills/SKILL.md` | **外部依赖** | 由 `cms-auth-skills` 提供 | 鉴权规则、授权入口与安装说明 |
 | 其余所有文件 | **动态** | 根据业务需求生成 | 受 1:1 绑定规则约束 |
 
-> **`cms-auth-skills/openapi/auth/` vs `openapi/<module>/`**：前者提供统一授权接口说明，后者存放目标 Skill 的业务接口文档；业务文档仍受 1:1 绑定规则和脚本完整性检查约束。
+> **`cms-auth-skills/SKILL.md` vs `openapi/<module>/`**：前者提供统一鉴权规则、授权入口与安装说明，后者存放目标 Skill 的业务接口文档；业务文档仍受 1:1 绑定规则和脚本完整性检查约束。
 
 ### 1.5 鉴权最小原则
 
@@ -111,6 +108,14 @@ SKILL.md（索引层）
 3. **每个 `scripts/<module>/<endpoint>.py` 只负责读取已准备好的鉴权值并调用业务 API**，不负责获取 `appKey`，也不负责换取 `access-token`。
 4. **禁止生成本地鉴权层**：不生成 `common/auth.md`、`common/conventions.md`、`openapi/common/appkey.md`、`scripts/auth/login.py`。
 5. **所有获取 `appKey` / `access-token` 的动作统一由 `cms-auth-skills` 承担**。
+
+### 1.6 命名规范（强制要求）
+
+Skill 包的名称必须遵循以下规范：
+
+1. **命名格式**：必须以 `CMS-` 开头，格式为 `CMS-xx-xx`（例如 `CMS-robot-manager`）。
+2. **唯一性**：命名应尽可能具有唯一性，避免与其他已存在的 Skill 名称重复。
+3. **字符限制**：仅允许使用小写字母、数字和连字符（`-`）。
 
 ---
 
@@ -143,14 +148,13 @@ dependencies:
 - `<module-b>`：<能力摘要>
 
 统一规范：
-- 认证与鉴权：`cms-auth-skills/common/auth.md`
-- 通用约束：`cms-auth-skills/common/conventions.md`
+- 认证与鉴权：`cms-auth-skills/SKILL.md`
+- 通用约束：`cms-auth-skills/SKILL.md`
 
 授权依赖：
-- 执行任何需要鉴权的操作前，先检查 `cms-auth-skills` 是否已安装
-- 如果已安装，直接使用 `cms-auth-skills/common/conventions.md`、`cms-auth-skills/common/auth.md`、`cms-auth-skills/openapi/auth/appkey.md`、`cms-auth-skills/openapi/auth/login.md`
-- 如果未安装，先执行 `npx clawhub@latest install cms-auth-skills --force`
-- 如果上面的安装方式不可用，再通过 `https://github.com/xgjk/xg-skills/tree/main/cms-auth-skills` 进行安装
+- 当接口声明需要 `appKey` 或 `access-token` 时，先尝试读取 `cms-auth-skills/SKILL.md`
+- 如果已安装，直接按 `cms-auth-skills/SKILL.md` 中的鉴权规则准备对应 `appKey` 或 `access-token`
+- 如果上面的安装方式不可用，再执行 `通过github安装: https://github.com/xgjk/xg-skills/tree/main/cms-auth-skills`
 - 安装完成后，再继续执行需要鉴权的操作
 
 输入完整性规则（强制）：
@@ -158,7 +162,7 @@ dependencies:
 2. <根据业务填写>
 
 建议工作流（简版）：
-1. 读取 `SKILL.md` 与 `cms-auth-skills/common/*`，明确能力范围、鉴权与安全约束。
+1. 读取 `SKILL.md` 与 `cms-auth-skills/SKILL.md`，明确能力范围、鉴权与安全约束。
 2. 识别用户意图并路由模块，先打开 `openapi/<module>/api-index.md`。
 3. 确认具体接口后，加载 `openapi/<module>/<endpoint>.md` 获取入参/出参/Schema。
 4. 补齐用户必需输入，必要时先读取用户文件/URL 并确认摘要。
@@ -170,7 +174,7 @@ dependencies:
 2. **脚本可独立执行**：所有 `scripts/` 下的脚本均可脱离 AI Agent 直接在命令行运行。
 3. **先读文档再执行**：执行脚本前，**必须先阅读对应模块的 `openapi/<module>/api-index.md`**。
 4. **入参来源**：脚本的所有入参定义与字段说明以 `openapi/` 文档为准，脚本仅负责编排调用流程。
-5. **鉴权一致**：涉及鉴权时，统一依赖 `cms-auth-skills/common/auth.md`。
+5. **鉴权一致**：涉及鉴权时，统一依赖 `cms-auth-skills/SKILL.md`。
 
 意图路由与加载规则（强制）：
 1. **先路由再加载**：必须先判定模块，再打开该模块的 `api-index.md`。
@@ -180,7 +184,7 @@ dependencies:
 
 宪章（必须遵守）：
 1. **只读索引**：`SKILL.md` 只描述"能做什么"和"去哪里读"，不写具体接口参数。
-2. **按需加载**：默认只读 `SKILL.md` + `cms-auth-skills/common/*`，只有触发某模块时才加载该模块的 `openapi`、`examples` 与 `scripts`。
+2. **按需加载**：默认只读 `SKILL.md` + `cms-auth-skills/SKILL.md`，只有触发某模块时才加载该模块的 `openapi`、`examples` 与 `scripts`。
 3. **对外克制**：对用户只输出"可用能力、必要输入、结果链接或摘要"，不暴露鉴权细节与内部字段。
 4. **素材优先级**：用户给了文件或 URL，必须先提取内容再确认，确认后才触发生成或写入。
 5. **生产约束**：仅允许生产域名与生产协议，不引入任何测试地址。
@@ -336,7 +340,7 @@ python3 scripts/<module>/<endpoint>.py
 ## 规范
 
 1. **必须使用 Python** 编写
-2. **鉴权遵循** `cms-auth-skills/common/auth.md` 规范
+2. **鉴权遵循** `cms-auth-skills/SKILL.md` 规范
 3. **入参定义以** `openapi/` 文档为准
 ```
 
@@ -358,7 +362,7 @@ python3 scripts/<module>/<endpoint>.py
   无（当接口使用 nologin 时）
   XG_USER_TOKEN              — access-token（当接口使用 access-token 时）
   XG_BIZ_API_KEY / XG_APP_KEY — appKey（当接口使用 appKey 时）
-  以上鉴权值建议由 cms-auth-skills 预先准备
+  以上鉴权值建议优先按 `cms-auth-skills/SKILL.md` 预先准备；如未安装则先安装
 """
 
 import sys
@@ -445,7 +449,7 @@ if __name__ == "__main__":
 在开始创建之前，必须先确认以下信息。**缺任何一项都不要开始。**
 
 ```
-□ Skill 名称（英文，如 im-robot）：_______________
+□ Skill 名称（英文，符合 CMS-xx-xx 且唯一）：_______________
 □ Skill 描述（一句话）：_______________
 □ 生产域名（如 api.example.com）：_______________
   └─ 未提供则在 API_URL 中用 {待确认域名} 占位并提醒用户
@@ -492,8 +496,8 @@ mkdir -p <skill-name>/scripts/<module>
 | 序号 | 内容来源 | 写入路径 |
 |---|---|---|
 | 1 | 附录 A | 目标 `SKILL.md` 的 YAML 头写入 `dependencies: - cms-auth-skills` |
-| 2 | 附录 B | 目标 `SKILL.md` 中引用 `cms-auth-skills/common/conventions.md` 与 `cms-auth-skills/common/auth.md` |
-| 3 | 附录 C | 如需授权接口参考，引用 `cms-auth-skills/openapi/auth/appkey.md` 与 `cms-auth-skills/openapi/auth/login.md` |
+| 2 | 附录 B | 目标 `SKILL.md` 中以 `cms-auth-skills/SKILL.md` 作为统一鉴权入口 |
+| 3 | 附录 C | 需要 `appKey` / `access-token` 时，优先读取 `cms-auth-skills/SKILL.md`；若不存在则先安装 |
 | 4 | 本章 1.5 | 不创建本地 `scripts/auth/login.py`，也不在业务脚本中实现登录流程 |
 
 不再创建 `<skill-name>/common/auth.md`、`<skill-name>/common/conventions.md`、`<skill-name>/openapi/common/appkey.md`、`<skill-name>/scripts/auth/login.py`。
@@ -674,7 +678,7 @@ for 第 i 个 API (i = 1 到 N):
 
 ---
 
-### 常见错误警告（弱模型高频踩坑清单）
+## 常见错误警告（弱模型高频踩坑清单）
 
 > 以下是 AI 模型在生成 Skill 包时最容易犯的错误，请在每一步都保持警惕：
 
@@ -706,7 +710,8 @@ Skill 包生成后，必须逐项检查以下内容：
 
 - [ ] 存在 `SKILL.md`
 - [ ] `SKILL.md` 包含宪章、工作流、目录树、模块索引表、能力概览
-- [ ] `SKILL.md` 的 YAML 头包含 `name`、`description`、`skillcode`
+- [ ] `SKILL.md` 的 YAML 头包含 `name`、`description`、`skillcode`、`github`（地址格式：`https://github.com/xgjk/xg-skills/tree/main/<skill-code>`）
+- [ ] Skill 名称符合 `CMS-xx-xx` 规范，且命名具有唯一性（不重复）
 - [ ] `SKILL.md` 的 YAML 头包含 `dependencies: - cms-auth-skills`
 - [ ] 每个业务模块都有 `openapi/<module>/api-index.md`
 - [ ] 每个业务接口都有独立文档 `openapi/<module>/<endpoint>.md`
@@ -738,8 +743,8 @@ Skill 包生成后，必须逐项检查以下内容：
 
 - [ ] 目标 `SKILL.md` 的 YAML 头已声明 `dependencies: - cms-auth-skills`
 - [ ] 目标 `SKILL.md` 的 `skillcode` 与实际 Skill 标识一致
-- [ ] 目标 `SKILL.md` 明确引用 `cms-auth-skills/common/auth.md` 与 `cms-auth-skills/common/conventions.md`
-- [ ] 目标 `SKILL.md` 包含"授权依赖"安装指引（cms-auth-skills 的检查与安装说明，含 `npx clawhub@latest install` 命令及 GitHub 备用地址）
+- [ ] 目标 `SKILL.md` 明确以 `cms-auth-skills/SKILL.md` 作为统一鉴权入口
+- [ ] 目标 `SKILL.md` 包含"授权依赖"安装指引（需要 `appKey` / `access-token` 时先读 `cms-auth-skills/SKILL.md`，缺失则安装，含 `npx clawhub@latest install` 命令）
 - [ ] 每个业务接口文档都明确声明一个且仅一个鉴权类型：`nologin`、`appKey`、`access-token`
 - [ ] 目标 Skill 未生成本地 `common/auth.md`、`common/conventions.md`、`openapi/common/appkey.md`、`scripts/auth/login.py`
 - [ ] 业务请求按接口声明使用 `nologin`、`appKey` 或 `access-token`
@@ -797,12 +802,9 @@ dependencies:
 - 目标 Skill 不再创建 `common/conventions.md`
 - 目标 Skill 不再创建 `openapi/common/appkey.md`
 - 目标 Skill 不再创建 `scripts/auth/login.py`
-- 目标 `SKILL.md` 中的统一规范必须引用：
-  - `cms-auth-skills/common/conventions.md`
-  - `cms-auth-skills/common/auth.md`
-- 如需查看授权接口说明，统一引用：
-  - `cms-auth-skills/openapi/auth/appkey.md`
-  - `cms-auth-skills/openapi/auth/login.md`
+- 目标 `SKILL.md` 中的统一规范必须以 `cms-auth-skills/SKILL.md` 作为鉴权入口
+- 当接口声明需要 `appKey` 或 `access-token` 时，优先读取 `cms-auth-skills/SKILL.md`
+- 如果读取不到，再安装 `cms-auth-skills`
 - 每个业务接口文档都必须声明一个且仅一个鉴权类型：`nologin`、`appKey`、`access-token`
 - 每个业务脚本都只读取已准备好的鉴权值，不负责获取 `appKey` / `access-token`
 - 如接口需要鉴权，先由 `cms-auth-skills` 准备 `appKey` 或 `access-token`
@@ -827,13 +829,13 @@ https://github.com/xgjk/xg-skills/tree/main/cms-auth-skills
 
 预检规则：
 
-- 如果 `cms-auth-skills` 已安装，直接使用
+- 如果 `cms-auth-skills` 已安装，优先读取 `cms-auth-skills/SKILL.md`
 - 如果未安装，先完成安装再执行需要鉴权的业务
 - 先读取目标接口文档的"鉴权类型"，判断是 `nologin`、`appKey` 还是 `access-token`
 - 如果接口是 `nologin`，直接执行业务脚本，无需准备鉴权值
 - `access-token` 接口的业务脚本读取 `XG_USER_TOKEN`
 - `appKey` 接口的业务脚本读取 `XG_BIZ_API_KEY` 或 `XG_APP_KEY`
-- 以上鉴权值应由 `cms-auth-skills` 预先准备
+- 以上鉴权值应优先按 `cms-auth-skills/SKILL.md` 预先准备；若不存在则先安装
 
 ---
 
@@ -859,14 +861,14 @@ https://github.com/xgjk/xg-skills/tree/main/cms-auth-skills
 
 > **本示例是弱模型的"对照标本"**。生成完成后，将你的 Skill 包与本示例的结构逐一比对，确保格式和层级完全一致。
 >
-> 示例参数：Skill 名称 = `demo-weather`，模块 = `forecast`，接口 = `get-current`，生产域名 = `api.weather-demo.com`
+> 示例参数：Skill 名称 = `CMS-demo-weather`，模块 = `forecast`，接口 = `get-current`，生产域名 = `api.weather-demo.com`
 >
 > 文件计数：1（SKILL.md）+ 1×3（模块索引）+ 1×2（接口文件）= **6 个文件**
 
 ### E.1 目录结构
 
 ```
-demo-weather/
+CMS-demo-weather/
 ├── SKILL.md
 ├── openapi/
 │   └── forecast/
@@ -885,15 +887,15 @@ demo-weather/
 
 ```markdown
 ---
-name: demo-weather
-description: 查询天气预报信息
-skillcode: demo-weather
-github: https://github.com/xgjk/xg-skills/tree/main/demo-weather
+name: CMS-demo-weather
+description: 提供实时天气查询与预报能力
+skillcode: CMS-demo-weather
+github: https://github.com/xgjk/xg-skills/tree/main/CMS-demo-weather
 dependencies:
   - cms-auth-skills
 ---
 
-# Demo-Weather — 索引
+# CMS-Weather — 索引
 
 本文件提供**能力宪章 + 能力树 + 按需加载规则**。详细参数与流程见各模块 `openapi/` 与 `examples/`。
 
@@ -905,12 +907,12 @@ dependencies:
 - `forecast`：查询当前天气（温度、湿度、天气状况）
 
 统一规范：
-- 认证与鉴权：`cms-auth-skills/common/auth.md`
-- 通用约束：`cms-auth-skills/common/conventions.md`
+- 认证与鉴权：`cms-auth-skills/SKILL.md`
+- 通用约束：`cms-auth-skills/SKILL.md`
 
 授权依赖：
-- 执行任何需要鉴权的操作前，先检查 `cms-auth-skills` 是否已安装
-- 如果已安装，直接使用 `cms-auth-skills/common/conventions.md`、`cms-auth-skills/common/auth.md`、`cms-auth-skills/openapi/auth/appkey.md`、`cms-auth-skills/openapi/auth/login.md`
+- 当接口声明需要 `appKey` 或 `access-token` 时，先尝试读取 `cms-auth-skills/SKILL.md`
+- 如果已安装，直接按 `cms-auth-skills/SKILL.md` 中的鉴权规则准备对应 `appKey` 或 `access-token`
 - 如果未安装，先执行 `npx clawhub@latest install cms-auth-skills --force`
 - 如果上面的安装方式不可用，再通过 `https://github.com/xgjk/xg-skills/tree/main/cms-auth-skills` 进行安装
 - 安装完成后，再继续执行需要鉴权的操作
@@ -920,7 +922,7 @@ dependencies:
 2. 不允许同时查询超过 5 个城市
 
 建议工作流（简版）：
-1. 读取 `SKILL.md` 与 `cms-auth-skills/common/*`，明确能力范围、鉴权与安全约束。
+1. 读取 `SKILL.md` 与 `cms-auth-skills/SKILL.md`，明确能力范围、鉴权与安全约束。
 2. 识别用户意图并路由模块，先打开 `openapi/forecast/api-index.md`。
 3. 确认具体接口后，加载 `openapi/forecast/get-current.md` 获取入参/出参/Schema。
 4. 补齐用户必需输入（城市名称），必要时先确认。
@@ -932,7 +934,7 @@ dependencies:
 2. **脚本可独立执行**：所有 `scripts/` 下的脚本均可脱离 AI Agent 直接在命令行运行。
 3. **先读文档再执行**：执行脚本前，**必须先阅读对应模块的 `openapi/forecast/api-index.md`**。
 4. **入参来源**：脚本的所有入参定义与字段说明以 `openapi/` 文档为准，脚本仅负责编排调用流程。
-5. **鉴权一致**：脚本内部同样遵循 `cms-auth-skills/common/auth.md` 的鉴权规则。
+5. **鉴权一致**：脚本内部同样遵循 `cms-auth-skills/SKILL.md` 的鉴权规则。
 
 意图路由与加载规则（强制）：
 1. **先路由再加载**：必须先判定模块，再打开该模块的 `api-index.md`。
@@ -942,7 +944,7 @@ dependencies:
 
 宪章（必须遵守）：
 1. **只读索引**：`SKILL.md` 只描述"能做什么"和"去哪里读"，不写具体接口参数。
-2. **按需加载**：默认只读 `SKILL.md` + `cms-auth-skills/common/*`，只有触发某模块时才加载该模块的 `openapi`、`examples` 与 `scripts`。
+2. **按需加载**：默认只读 `SKILL.md` + `cms-auth-skills/SKILL.md`，只有触发某模块时才加载该模块的 `openapi`、`examples` 与 `scripts`。
 3. **对外克制**：对用户只输出"可用能力、必要输入、结果链接或摘要"，不暴露鉴权细节与内部字段。
 4. **素材优先级**：用户给了文件或 URL，必须先提取内容再确认，确认后才触发生成或写入。
 5. **生产约束**：仅允许生产域名与生产协议，不引入任何测试地址。
@@ -1059,7 +1061,7 @@ demo-weather/
 
 ## 标准流程
 
-1. 鉴权预检（按 `cms-auth-skills/common/auth.md` 获取 token）
+1. 鉴权预检（优先按 `cms-auth-skills/SKILL.md` 获取 token；如未安装先安装）
 2. 确认用户要查询的城市名称
 3. 调用 `scripts/forecast/get-current.py` 执行查询
 4. 输出天气摘要（城市、温度、湿度、天气状况）
@@ -1083,7 +1085,7 @@ demo-weather/
 ## 使用方式
 
 \```bash
-# 先通过 cms-auth-skills 准备 access-token，再设置环境变量
+# 先优先读取 cms-auth-skills/SKILL.md 获取 access-token；如未安装先安装
 export XG_USER_TOKEN="your-access-token"
 
 # 执行脚本
@@ -1097,7 +1099,7 @@ python3 scripts/forecast/get-current.py
 ## 规范
 
 1. **必须使用 Python** 编写
-2. **鉴权遵循** `cms-auth-skills/common/auth.md` 规范
+2. **鉴权遵循** `cms-auth-skills/SKILL.md` 规范
 3. **入参定义以** `openapi/` 文档为准
 ```
 

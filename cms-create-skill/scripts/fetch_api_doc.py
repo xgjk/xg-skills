@@ -282,7 +282,7 @@ def process_urls(urls: list, output_dir: str = None) -> list:
 # ============================================================
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or any(arg in ("-h", "--help") for arg in sys.argv[1:]):
         print("用法: python3 fetch_api_doc.py <url1> [url2] ... [--output-dir <dir>]")
         print("")
         print("自动识别 URL 类型：")
@@ -293,7 +293,7 @@ if __name__ == "__main__":
         print("示例:")
         print('  python3 fetch_api_doc.py "https://example.com/api-docs/im.md"')
         print('  python3 fetch_api_doc.py "https://host/api-center/doc.html#/im/xxx/someAPI" --output-dir ./temp')
-        sys.exit(1)
+        sys.exit(0 if len(sys.argv) >= 2 else 1)
 
     urls = []
     output_dir = None

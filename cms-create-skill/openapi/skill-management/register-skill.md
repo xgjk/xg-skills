@@ -1,4 +1,4 @@
-# POST https://sg-cwork-api.mediportal.com.cn/im/skill/register
+# POST https://skills.mediportal.com.cn/api/skill/register
 
 ## 作用
 

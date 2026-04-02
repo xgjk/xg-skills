@@ -39,7 +39,7 @@
 | `--name` | string | 注册时必须 | Skill 名称 |
 | `--description` | string | 否 | Skill 描述 |
 | `--label` | string | 否 | Skill 标签 |
-| `--version` | integer | 否 | 版本号（更新时使用） |
+| `--version` | string | 否 | 版本号（SemVer格式，更新时使用） |
 | `--update` | flag | 否 | 更新模式（默认注册模式） |
 | `--output` | string | 否 | ZIP 输出路径（默认 `<skill-name>.zip`） |
 | `--file-key` | string | 否 | 七牛文件 key（默认自动生成） |
@@ -55,7 +55,7 @@ python3 cms-create-skill/scripts/skill-management/publish_skill.py \
 
 # 内部 Skill：更新已有 Skill
 python3 cms-create-skill/scripts/skill-management/publish_skill.py \
-  ./im-robot --code im-robot --update --version 2 --internal
+  ./im-robot --code im-robot --update --version 1.0.0 --internal
 
 # 外部 Skill：发布到平台（跳过七牛上传）
 python3 cms-create-skill/scripts/skill-management/publish_skill.py \

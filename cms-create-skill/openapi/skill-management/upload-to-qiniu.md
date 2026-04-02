@@ -1,4 +1,4 @@
-# GET https://sg-cwork-api.mediportal.com.cn/ai-business/qiNiu/getSimpleUploadCredentials + POST https://up-z2.qiniup.com/
+# POST https://skills.mediportal.com.cn/api/qiniu/token + POST https://up-z2.qiniup.com/
 
 ## 作用
 
@@ -12,7 +12,7 @@
 |---|---|---|
 | `access-token` | 是 | 鉴权 token（依赖 `cms-auth-skills/common/auth.md` 获取） |
 
-## 参数表（凭证接口，Query）
+## 参数表（凭证接口，Body）
 
 | 参数 | 类型 | 必填 | 说明 |
 |---|---|---|---|

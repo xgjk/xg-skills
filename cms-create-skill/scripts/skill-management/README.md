@@ -35,7 +35,7 @@ python3 scripts/skill-management/publish_skill.py \
 
 # 内部 Skill：更新已有 Skill（打包 + 上传七牛 + 更新）
 python3 scripts/skill-management/publish_skill.py \
-  ./im-robot --code im-robot --update --version 2 --internal
+  ./im-robot --code im-robot --update --version 1.0.0 --internal
 
 # 外部 Skill：发布到平台（跳过七牛上传，下载地址固定为 ClawHub）
 python3 scripts/skill-management/publish_skill.py \
@@ -72,7 +72,7 @@ python3 scripts/skill-management/register_skill.py \
 
 # 仅更新（需要 XG_USER_TOKEN）
 python3 scripts/skill-management/update_skill.py \
-  --code im-robot --download-url "https://..." --version 2
+  --code im-robot --download-url "https://..." --version 1.0.0
 
 # 下架（需要 XG_USER_TOKEN）
 python3 scripts/skill-management/delete_skill.py --id 123 --reason "已废弃"

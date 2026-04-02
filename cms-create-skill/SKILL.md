@@ -8,7 +8,7 @@ dependencies:
 
 # CMS Skill 创建工具
 
-**当前版本**: v1.20.2
+**当前版本**: v1.20.0
 
 > **⚠️ 身份声明**：本 Skill 是 **Skill 全生命周期工具**，提供三大核心能力：
 >
@@ -219,7 +219,7 @@ python3 cms-create-skill/scripts/skill-management/publish_skill.py \
 
 # 内部 Skill：更新已有 Skill（打包 + 上传七牛 + 更新，一条命令）
 python3 cms-create-skill/scripts/skill-management/publish_skill.py \
-  ./im-robot --code im-robot --update --version 2 --internal
+  ./im-robot --code im-robot --update --version 1.0.0 --internal
 
 # 外部 Skill：发布到平台（跳过七牛上传，使用 ClawHub 下载地址）
 python3 cms-create-skill/scripts/skill-management/publish_skill.py \
