@@ -104,6 +104,54 @@ xg-skills/
 - `skills-index.md`：如果你们希望对外快速浏览所有 skill，可以维护一个全局索引文件（列出 skill 名称与一句话能力摘要）
 - 可加入“模板一致性校验脚本”（只验证模板与固定文件是否一致，不参与业务逻辑）
 
+## Issue 提报与协作规范（推荐）
+
+为保证问题可追踪、可筛选、可统计，本仓库已启用 GitHub Issue Forms。
+
+### 可用模板
+
+- 🐞 Bug Report
+- ✨ Feature Request
+- ⚡ Performance Issue
+- 🔗 Integration Issue
+- ♻️ Regression Report
+- 🚨 Incident Report
+- 🔒 Security Issue
+- 📚 Documentation Issue
+- 🛠️ Refactor Proposal
+- ❓ Question / Support
+
+### 标签规范（建议最少满足）
+
+每条 Issue 建议至少具备：
+
+1. `type:*`（必选）
+   - 例如：`type:bug` / `type:feature` / `type:roadmap`
+2. `skill:*`（必选，至少一个）
+   - 例如：`skill:cms-auth-skills`、`skill:notex-skills`
+3. `priority:*`（建议）
+   - `priority:P0` ~ `priority:P3`
+4. `severity:*`（Bug/Incident 建议）
+   - `severity:critical` / `severity:major` / `severity:minor`
+5. `status:*`（流转状态）
+   - `status:triage` / `status:in-progress` / `status:blocked` / `status:ready-for-test` / `status:done`
+
+### 标题建议格式
+
+- Bug：`[Bug] <问题一句话描述> — <影响对象/场景>`
+- 需求：`[Feature] <需求一句话描述> — <目标对象/场景>`
+- 规划：`[Roadmap] <阶段目标> — <里程碑范围>`
+
+### 提报质量基线（DoD）
+
+Issue 中建议至少包含：
+
+- 期望行为（Expected）
+- 实际行为（Actual）
+- 最小复现步骤（Bug 类）
+- 影响范围
+- 验收标准（Definition of Done）
+
 ---
 本 README 作为仓库级入口说明；协议细节以 `skill编写规范.md` 为准。
 
