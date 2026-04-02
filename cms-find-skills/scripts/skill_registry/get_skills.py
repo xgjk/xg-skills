@@ -18,8 +18,17 @@ import os
 # 禁用 InsecureRequestWarning (因为 verify=False)
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
-API_BASE = "https://skills.mediportal.com.cn"
+DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
+API_BASE = os.environ.get("XG_SKILL_API_BASE") or os.environ.get("API_BASE") or DEFAULT_API_BASE
 API_URL = f"{API_BASE.rstrip('/')}/api/skill/list"
+
+
+def parse_api_response(response: requests.Response, action: str) -> dict:
+    data = response.json()
+    if isinstance(data, dict) and data.get("resultCode") not in (None, 1):
+        message = data.get("resultMsg") or data.get("detailMsg") or response.text
+        raise RuntimeError(f"{action}失败: {message}")
+    return data
 
 
 def call_api() -> dict:
@@ -34,7 +43,7 @@ def call_api() -> dict:
             allow_redirects=True,
         )
         response.raise_for_status()
-        return response.json()
+        return parse_api_response(response, "获取 Skill 列表")
     except Exception as exc:
         raise Exception(f"请求失败: {exc}")
 
@@ -107,7 +116,7 @@ def format_list(skills: list[dict]) -> str:
     for index, skill in enumerate(skills, 1):
         display_name = (skill.get("displayName") or skill.get("name") or "")[:22]
         skill_code = (skill.get("skillCode") or skill.get("name") or "")[:22]
-        version = (skill.get("version") or "")[:9]
+        version = (skill.get("clawVersion") or skill.get("version") or "")[:9]
         metadata = skill.get("metadata") or {}
         xgjk = metadata.get("xgjk") or {}
         internal = "是" if xgjk.get("isInternal") else "否"
