@@ -1,13 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: "💬 提问与讨论"
+  - name: "💬 Question / Support"
     url: "https://github.com/xgjk/xg-skills/discussions"
-    about: "不确定是 Bug 还是需求时，先在 Discussions 讨论。"
-
-issue_templates:
-  - name: "🐞 Bug Report"
-    description: "提交缺陷问题（触发异常、鉴权异常、功能错误等）"
-    file: "bug_report.md"
-  - name: "✨ Feature Request"
-    description: "提交新需求、增强项、未来规划建议"
-    file: "feature_request.md"
+    about: "不确定是 Bug、需求还是用法问题，先在 Discussions 交流。"
