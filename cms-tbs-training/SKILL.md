@@ -10,7 +10,7 @@ dependencies:
 
 本文件提供**能力宪章 + 能力树 + 按需加载规则**。详细参数与流程见各模块 `openapi/` 与 `examples/`。
 
-**当前版本**: v0.2
+**当前版本**: v0.80
 
 **接口版本**: 
 - TBS 业务接口：`/tbs/*`，使用 `nologin` 或 `access-token` 鉴权
