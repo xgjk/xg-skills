@@ -14,40 +14,27 @@
    协议中强调的固定文件（如 `common/auth.md`、`scripts/common/toon_encoder.py` 等）在**每个 skill 内都必须“原样复制”**。  
    因此：仓库根可以放“模板/参考”，但最终落地到每个 skill 目录里的固定文件必须与模板完全一致。
 
-## 仓库目录结构（示例）
+## Skills 索引（当前仓库）
+
+本仓库以「每个 Skill 一个目录」进行管理。以下为当前已收录的 Skills（以仓库实际目录为准）：
+
+- `cms-auth-skills/`
+- `notex-skills/`
+
+> 说明：该索引用于快速查看“当前有哪些 skill”。新增/删除 skill 时，请同步更新此处。
+
+## 仓库结构说明（简版）
 
 ```text
 xg-skills/
 ├── README.md
-├── templates/                    # 可选：固定文件“原样模板/参考源”（只读，不参与运行）
-│   ├── common/
-│   │   ├── auth.md
-│   │   └── conventions.md
-│   ├── openapi/common/
-│   │   └── appkey.md
-│   └── scripts/common/
-│       └── toon_encoder.py
-├── skills-index.md              # 可选：全局技能索引（按需维护）
+├── .github/ISSUE_TEMPLATE/     # Issue 表单模板（Bug/Feature/Perf/Integration 等）
 └── <skill-name>/
     ├── SKILL.md
     ├── common/
-    │   ├── auth.md
-    │   └── conventions.md
     ├── openapi/
-    │   ├── common/
-    │   │   └── appkey.md
-    │   └── <module>/
-    │       ├── api-index.md
-    │       └── <endpoint>.md
     ├── examples/
-    │   └── <module>/
-    │       └── README.md
     └── scripts/
-        ├── common/
-        │   └── toon_encoder.py
-        └── <module>/
-            ├── README.md
-            └── <endpoint>.py
 ```
 
 ## Skill 包内部结构（强约束）
