@@ -19,6 +19,7 @@
 
 - `cms-auth-skills/`
 - `notex-skills/`
+- `cms-push-skill/`
 
 > 说明：该索引用于快速查看“当前有哪些 skill”。新增/删除 skill 时，请同步更新此处。
 
