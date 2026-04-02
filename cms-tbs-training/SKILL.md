@@ -6,41 +6,46 @@ dependencies:
   - cms-auth-skills
 ---
 
-# TBS训战平台 — 索引
+# TBS 训战平台 — 索引
 
 本文件提供**能力宪章 + 能力树 + 按需加载规则**。详细参数与流程见各模块 `openapi/` 与 `examples/`。
 
-**当前版本**: v0.80
+**当前版本**: v0.0.8
 
-**接口版本**: 
+**接口版本**:
+
 - TBS 业务接口：`/tbs/*`，使用 `nologin` 或 `access-token` 鉴权
 - GPTS 核心接口：`/gpts/*`，使用 `access-token` 鉴权
 
 **域名说明**：
+
 - TBS 业务接口（测试）：`https://cwork-web-test.xgjktech.com.cn`
 - TBS 业务接口（正式）：`https://sg-cwork-web.mediportal.com.cn`
 - GPTS 核心接口（正式）：`https://sg-al-cwork-web.mediportal.com.cn`
 
 **能力概览（13 块能力）**：
+
 - `home`：首页聚合（本周训战统计、活动分类、视频学习任务、产品场景列表）
 - `drug`：药品与场景查询（获取药品列表、场景列表、场景详情、职称列表、热词列表）
-- `speech`：PPT演讲（获取PPT详情，完成演讲、演讲记录查询）
+- `speech`：PPT 演讲（获取 PPT 详情，完成演讲、演讲记录查询）
 - `training`：训战记录（我的统计数据、记录列表、记录详情含对话回溯）
 - `learning`：学习视频（视频详情查询、播放进度查询与保存）
 - `prepare`：训练准备（开场指导获取、开场指导缓存清除）
-- `gpts`：GPTS核心（获取应用详情、创建会话、SSE对话交互、释放token）
-- `basic`：基础信息（GPT ID获取、TTS配置获取）
+- `gpts`：GPTS 核心（获取应用详情、创建会话、SSE 对话交互、释放 token）
+- `basic`：基础信息（GPT ID 获取、TTS 配置获取）
 - `scene-image`：场景图片管理（重置场景图片）
-- `file`：文件管理（通过URL上传文件）
-- `feedback`：反馈相关（获取反馈应用详情、获取反馈GPT ID）
+- `file`：文件管理（通过 URL 上传文件）
+- `feedback`：反馈相关（获取反馈应用详情、获取反馈 GPT ID）
 - `training-flow`：训练流程公开接口（获取药品列表、训练记录、场景列表）
 - `dialogue-flow`：训练对话流程可视化（获取对话流程详情）
 
 统一规范：
+
 - 认证与鉴权：`cms-auth-skills/common/auth.md`
 - 通用约束：`cms-auth-skills/common/conventions.md`
 
 授权依赖：
+
 - 执行任何需要鉴权的操作前，先检查 `cms-auth-skills` 是否已安装
 - 如果已安装，直接使用 `cms-auth-skills/common/conventions.md`、`cms-auth-skills/common/auth.md`、`cms-auth-skills/openapi/auth/appkey.md`、`cms-auth-skills/openapi/auth/login.md`
 - 如果未安装，先执行 `npx clawhub@latest install cms-auth-skills --force`
@@ -48,11 +53,13 @@ dependencies:
 - 安装完成后，再继续执行需要鉴权的操作
 
 输入完整性规则（强制）：
-1. 场景ID（sceneId）大多数接口的必填参数，需用户提供
+
+1. 场景 ID（sceneId）大多数接口的必填参数，需用户提供
 2. 分页参数（page、size）可选，不传则使用系统默认值
 3. 日期范围查询时需提供 startDate 和 endDate（格式：yyyy-MM-dd）
 
 建议工作流（简版）：
+
 1. 读取 `SKILL.md` 与 `cms-auth-skills/common/*`，明确能力范围、鉴权与安全约束。
 2. 识别用户意图并路由模块，先打开 `openapi/<module>/api-index.md`。
 3. 确认具体接口后，加载 `openapi/<module>/<endpoint>.md` 获取入参/出参/Schema。
@@ -61,6 +68,7 @@ dependencies:
 6. **执行对应脚本**：调用 `scripts/<module>/<endpoint>.py` 执行接口调用，获取结果。**所有接口调用必须通过脚本执行，不允许跳过脚本直接调用 API。**
 
 脚本使用规则（强制）：
+
 1. **每个接口必须有对应脚本**：每个 `openapi/<module>/<endpoint>.md` 都必须有对应的 `scripts/<module>/<endpoint>.py`，不允许"暂无脚本"。
 2. **脚本可独立执行**：所有 `scripts/` 下的脚本均可脱离 AI Agent 直接在命令行运行。
 3. **先读文档再执行**：执行脚本前，**必须先阅读对应模块的 `openapi/<module>/api-index.md`**。
@@ -68,12 +76,14 @@ dependencies:
 5. **鉴权一致**：涉及鉴权时，统一依赖 `cms-auth-skills/common/auth.md`。
 
 意图路由与加载规则（强制）：
+
 1. **先路由再加载**：必须先判定模块，再打开该模块的 `api-index.md`。
 2. **先读文档再调用**：在描述调用或执行前，必须加载对应接口文档。
 3. **脚本必须执行**：所有接口调用必须通过脚本执行，不允许跳过。
 4. **不猜测**：若意图不明确，必须追问澄清。
 
 宪章（必须遵守）：
+
 1. **只读索引**：`SKILL.md` 只描述"能做什么"和"去哪里读"，不写具体接口参数。
 2. **按需加载**：默认只读 `SKILL.md` + `cms-auth-skills/common/*`，只有触发某模块时才加载该模块的 `openapi`、`examples` 与 `scripts`。
 3. **对外克制**：对用户只输出"可用能力、必要输入、结果链接或摘要"，不暴露鉴权细节与内部字段。
@@ -87,25 +97,26 @@ dependencies:
 
 模块路由与能力索引（合并版）：
 
-| 用户意图（示例） | 模块 | 能力摘要 | 接口文档 | 示例模板 | 脚本 |
-|---|---|---|---|---|---|
-| "查看首页摘要"、"本周训战统计" | `home` | 获取首页训战统计摘要 | `./openapi/home/api-index.md` | `./examples/home/README.md` | `./scripts/home/<endpoint>.py` |
-| "有哪些药品"、"获取药品列表" | `drug` | 获取启用的药品列表 | `./openapi/drug/api-index.md` | `./examples/drug/README.md` | `./scripts/drug/<endpoint>.py` |
-| "查看场景列表"、"根据药品查场景" | `drug` | 根据药品ID或external_id获取场景列表 | `./openapi/drug/api-index.md` | `./examples/drug/README.md` | `./scripts/drug/<endpoint>.py` |
-| "查看场景详情"、"场景职称" | `drug` | 获取场景详细信息、职称列表、热词 | `./openapi/drug/api-index.md` | `./examples/drug/README.md` | `./scripts/drug/<endpoint>.py` |
-| "查看PPT详情"、"PPT演讲" | `speech` | 获取PPT场景详情，完成演讲、查询演讲记录 | `./openapi/speech/api-index.md` | `./examples/speech/README.md` | `./scripts/speech/<endpoint>.py` |
-| "查看训战记录"、"我的统计数据" | `training` | 获取训战统计数据、记录列表、记录详情 | `./openapi/training/api-index.md` | `./examples/training/README.md` | `./scripts/training/<endpoint>.py` |
-| "查看学习视频"、"视频进度" | `learning` | 获取学习视频详情、查询/保存播放进度 | `./openapi/learning/api-index.md` | `./examples/learning/README.md` | `./scripts/learning/<endpoint>.py` |
-| "获取开场指导"、"清除开场缓存" | `prepare` | 获取开场指导、清除开场指导缓存 | `./openapi/prepare/api-index.md` | `./examples/prepare/README.md` | `./scripts/prepare/<endpoint>.py` |
-| "获取GPT应用详情"、"开始训练"、"创建会话"、"提交对话"、"生成点评"、"释放token" | `gpts` | GPTS核心接口：应用详情、会话管理、SSE对话交互、释放token | `./openapi/gpts/api-index.md` | `./examples/gpts/README.md` | `./scripts/gpts/<endpoint>.py` |
-| "获取GPT ID"、"TTS配置" | `basic` | 获取GPT ID和TTS配置信息 | `./openapi/basic/api-index.md` | `./examples/basic/README.md` | `./scripts/basic/<endpoint>.py` |
-| "重置场景图片" | `scene-image` | 重置场景图片 | `./openapi/scene-image/api-index.md` | `./examples/scene-image/README.md` | `./scripts/scene-image/<endpoint>.py` |
-| "上传文件"、"URL上传" | `file` | 通过URL上传文件 | `./openapi/file/api-index.md` | `./examples/file/README.md` | `./scripts/file/<endpoint>.py` |
-| "反馈应用详情"、"反馈GPT ID" | `feedback` | 获取反馈功能的应用详情和GPT ID | `./openapi/feedback/api-index.md` | `./examples/feedback/README.md` | `./scripts/feedback/<endpoint>.py` |
-| "公开训练记录"、"按药品查场景" | `training-flow` | 公开接口：获取药品列表、训练记录、场景列表 | `./openapi/training-flow/api-index.md` | `./examples/training-flow/README.md` | `./scripts/training-flow/<endpoint>.py` |
-| "对话流程详情"、"训练可视化" | `dialogue-flow` | 获取训练对话流程详情 | `./openapi/dialogue-flow/api-index.md` | `./examples/dialogue-flow/README.md` | `./scripts/dialogue-flow/<endpoint>.py` |
+| 用户意图（示例）                                                                  | 模块            | 能力摘要                                                    | 接口文档                               | 示例模板                             | 脚本                                    |
+| --------------------------------------------------------------------------------- | --------------- | ----------------------------------------------------------- | -------------------------------------- | ------------------------------------ | --------------------------------------- |
+| "查看首页摘要"、"本周训战统计"                                                    | `home`          | 获取首页训战统计摘要                                        | `./openapi/home/api-index.md`          | `./examples/home/README.md`          | `./scripts/home/<endpoint>.py`          |
+| "有哪些药品"、"获取药品列表"                                                      | `drug`          | 获取启用的药品列表                                          | `./openapi/drug/api-index.md`          | `./examples/drug/README.md`          | `./scripts/drug/<endpoint>.py`          |
+| "查看场景列表"、"根据药品查场景"                                                  | `drug`          | 根据药品 ID 或 external_id 获取场景列表                     | `./openapi/drug/api-index.md`          | `./examples/drug/README.md`          | `./scripts/drug/<endpoint>.py`          |
+| "查看场景详情"、"场景职称"                                                        | `drug`          | 获取场景详细信息、职称列表、热词                            | `./openapi/drug/api-index.md`          | `./examples/drug/README.md`          | `./scripts/drug/<endpoint>.py`          |
+| "查看 PPT 详情"、"PPT 演讲"                                                       | `speech`        | 获取 PPT 场景详情，完成演讲、查询演讲记录                   | `./openapi/speech/api-index.md`        | `./examples/speech/README.md`        | `./scripts/speech/<endpoint>.py`        |
+| "查看训战记录"、"我的统计数据"                                                    | `training`      | 获取训战统计数据、记录列表、记录详情                        | `./openapi/training/api-index.md`      | `./examples/training/README.md`      | `./scripts/training/<endpoint>.py`      |
+| "查看学习视频"、"视频进度"                                                        | `learning`      | 获取学习视频详情、查询/保存播放进度                         | `./openapi/learning/api-index.md`      | `./examples/learning/README.md`      | `./scripts/learning/<endpoint>.py`      |
+| "获取开场指导"、"清除开场缓存"                                                    | `prepare`       | 获取开场指导、清除开场指导缓存                              | `./openapi/prepare/api-index.md`       | `./examples/prepare/README.md`       | `./scripts/prepare/<endpoint>.py`       |
+| "获取 GPT 应用详情"、"开始训练"、"创建会话"、"提交对话"、"生成点评"、"释放 token" | `gpts`          | GPTS 核心接口：应用详情、会话管理、SSE 对话交互、释放 token | `./openapi/gpts/api-index.md`          | `./examples/gpts/README.md`          | `./scripts/gpts/<endpoint>.py`          |
+| "获取 GPT ID"、"TTS 配置"                                                         | `basic`         | 获取 GPT ID 和 TTS 配置信息                                 | `./openapi/basic/api-index.md`         | `./examples/basic/README.md`         | `./scripts/basic/<endpoint>.py`         |
+| "重置场景图片"                                                                    | `scene-image`   | 重置场景图片                                                | `./openapi/scene-image/api-index.md`   | `./examples/scene-image/README.md`   | `./scripts/scene-image/<endpoint>.py`   |
+| "上传文件"、"URL 上传"                                                            | `file`          | 通过 URL 上传文件                                           | `./openapi/file/api-index.md`          | `./examples/file/README.md`          | `./scripts/file/<endpoint>.py`          |
+| "反馈应用详情"、"反馈 GPT ID"                                                     | `feedback`      | 获取反馈功能的应用详情和 GPT ID                             | `./openapi/feedback/api-index.md`      | `./examples/feedback/README.md`      | `./scripts/feedback/<endpoint>.py`      |
+| "公开训练记录"、"按药品查场景"                                                    | `training-flow` | 公开接口：获取药品列表、训练记录、场景列表                  | `./openapi/training-flow/api-index.md` | `./examples/training-flow/README.md` | `./scripts/training-flow/<endpoint>.py` |
+| "对话流程详情"、"训练可视化"                                                      | `dialogue-flow` | 获取训练对话流程详情                                        | `./openapi/dialogue-flow/api-index.md` | `./examples/dialogue-flow/README.md` | `./scripts/dialogue-flow/<endpoint>.py` |
 
 能力树（实际目录结构）：
+
 ```text
 cms-tbs-training/
 ├── SKILL.md
