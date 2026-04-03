@@ -5,7 +5,7 @@
 用途：获取七牛上传凭证 → 上传文件 → 返回下载地址
 
 使用方式：
-  python3 cms-create-skill/scripts/skill-management/upload_to_qiniu.py <file-path> [--file-key <key>] [--corp-id <id>]
+  python3 cms-push-skill/scripts/skill-management/upload_to_qiniu.py <file-path> [--file-key <key>] [--corp-id <id>]
 
 参数说明：
   file-path     要上传的文件路径（必须）
@@ -17,8 +17,8 @@
   XG_CORP_ID     — 企业 ID（可选，也可通过 --corp-id 参数传入）
 
 示例：
-  python3 cms-create-skill/scripts/skill-management/upload_to_qiniu.py ./im-robot.zip
-  python3 cms-create-skill/scripts/skill-management/upload_to_qiniu.py ./im-robot.zip --file-key "skills/im-robot-v1.zip"
+  python3 cms-push-skill/scripts/skill-management/upload_to_qiniu.py ./im-robot.zip
+  python3 cms-push-skill/scripts/skill-management/upload_to_qiniu.py ./im-robot.zip --file-key "skills/im-robot-v1.zip"
 
 输出：
   成功时输出下载地址到 stdout，可直接作为 register_skill.py 的 --download-url 参数。
@@ -35,7 +35,7 @@ import warnings
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
 DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
-API_BASE = os.environ.get("XG_SKILL_API_BASE") or os.environ.get("API_BASE") or DEFAULT_API_BASE
+API_BASE = DEFAULT_API_BASE
 
 # 七牛上传凭证接口
 QINIU_AUTH_URL = f"{API_BASE.rstrip('/')}/api/qiniu/token"

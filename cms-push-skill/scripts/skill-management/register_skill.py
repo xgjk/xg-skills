@@ -5,7 +5,7 @@
 用途：向平台注册一个新的 AI Skill（ClawHub 协议格式）
 
 使用方式：
-  python3 cms-create-skill/scripts/skill-management/register_skill.py --code <code> --name <name> [--description <desc>] [--download-url <url>] [--label <label>] [--internal]
+  python3 cms-push-skill/scripts/skill-management/register_skill.py --code <code> --name <name> [--description <desc>] [--download-url <url>] [--label <label>] [--internal]
 
 参数说明：
   --code          Skill 唯一标识（必须）
@@ -31,7 +31,7 @@ import warnings
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
 DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
-API_BASE = os.environ.get("XG_SKILL_API_BASE") or os.environ.get("API_BASE") or DEFAULT_API_BASE
+API_BASE = DEFAULT_API_BASE
 
 API_URL = f"{API_BASE.rstrip('/')}/api/skill/register"
 
@@ -75,7 +75,7 @@ def build_clawhub_payload(args) -> dict:
         "name": args.code,
         "skillCode": args.code,
         "displayName": args.name,
-        "clawVersion": args.version,
+        "version": args.version,
         "description": args.description,
         "downloadUrl": args.download_url,
         "metadata": {

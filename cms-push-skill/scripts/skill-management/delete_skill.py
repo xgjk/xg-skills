@@ -5,7 +5,7 @@
 用途：将已发布的 Skill 下架
 
 使用方式：
-  python3 cms-create-skill/scripts/skill-management/delete_skill.py --id <skill-id> [--reason <下架原因>]
+  python3 cms-push-skill/scripts/skill-management/delete_skill.py --id <skill-id> [--reason <下架原因>]
 
 参数说明：
   --id       Skill ID（必须）
@@ -26,7 +26,7 @@ import warnings
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
 DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
-API_BASE = os.environ.get("XG_SKILL_API_BASE") or os.environ.get("API_BASE") or DEFAULT_API_BASE
+API_BASE = DEFAULT_API_BASE
 
 API_URL = f"{API_BASE.rstrip('/')}/api/skill/delete"
 

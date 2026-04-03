@@ -9,13 +9,13 @@
 
 使用方式：
   # 首次发布（注册）
-  python3 cms-create-skill/scripts/skill-management/publish_skill.py ./im-robot --code im-robot --name "IM 机器人"
+  python3 cms-push-skill/scripts/skill-management/publish_skill.py ./im-robot --code im-robot --name "IM 机器人"
 
   # 更新已有 Skill（加 --update）
-  python3 cms-create-skill/scripts/skill-management/publish_skill.py ./im-robot --code im-robot --update [--name "新名称"] [--version 1.2.0]
+  python3 cms-push-skill/scripts/skill-management/publish_skill.py ./im-robot --code im-robot --update [--name "新名称"] [--version 1.2.0]
 
   # 外部 Skill（ClawHub）发布
-  python3 cms-create-skill/scripts/skill-management/publish_skill.py ./im-robot --code im-robot --name "IM 机器人" --external
+  python3 cms-push-skill/scripts/skill-management/publish_skill.py ./im-robot --code im-robot --name "IM 机器人" --external
 
 参数说明：
   skill_dir       Skill 目录路径（必须）
@@ -59,7 +59,7 @@ from register_skill import call_api as register_api
 from update_skill import call_api as update_api
 
 DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
-API_BASE = os.environ.get("XG_SKILL_API_BASE") or os.environ.get("API_BASE") or DEFAULT_API_BASE
+API_BASE = DEFAULT_API_BASE
 
 ROBOT_SYNC_URL = f"{API_BASE.rstrip('/')}/api/robot/skill-sync"
 
@@ -77,7 +77,7 @@ def build_register_payload(args, download_url: str, is_internal: bool) -> dict:
         "name": args.code,
         "skillCode": args.code,
         "displayName": args.name,
-        "clawVersion": args.version,
+        "version": args.version,
         "description": args.description,
         "downloadUrl": download_url,
         "metadata": {
@@ -103,7 +103,7 @@ def build_update_payload(args, download_url: str, is_internal: bool) -> dict:
     if args.description:
         payload["description"] = args.description
     if args.version:
-        payload["clawVersion"] = args.version
+        payload["version"] = args.version
     return payload
 
 
@@ -119,7 +119,7 @@ def dispatch_skill_sync(token: str, action: str, args, download_url: str,
         "skillCode": args.code,
         "name": args.name or args.code,
         "description": args.description or "",
-        "clawVersion": args.version or "0.0.1",
+        "version": args.version or "0.0.1",
         "downloadUrl": download_url,
         "deleted": False,
         "syncClawhub": sync_clawhub,

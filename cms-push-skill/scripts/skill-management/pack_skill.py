@@ -12,8 +12,8 @@
   --output      输出 ZIP 文件路径（可选，默认为 <skill-name>.zip）
 
 示例：
-  python3 cms-create-skill/scripts/skill-management/pack_skill.py ./im-robot
-  python3 cms-create-skill/scripts/skill-management/pack_skill.py ./im-robot --output ./dist/im-robot-v1.zip
+  python3 cms-push-skill/scripts/skill-management/pack_skill.py ./im-robot
+  python3 cms-push-skill/scripts/skill-management/pack_skill.py ./im-robot --output ./dist/im-robot-v1.zip
 
 说明：
   无需登录 token。

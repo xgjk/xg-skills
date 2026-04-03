@@ -6,7 +6,7 @@ dependencies:
   - cms-auth-skills
 ---
 
-**当前版本**: v1.0.7
+**当前版本**: v1.0.8
 
 # cms-push-skill
 
@@ -39,8 +39,8 @@ dependencies:
 
 ### 问题管理
 
-- 上报问题：`python3 report_issue.py --skill-code my-skill --version 1.0.0 --error "ConnectionError" --message "连接超时"`
-- 管道上报：`python3 some_script.py 2>&1 | python3 report_issue.py --skill-code my-skill --version 1.0.0 --stdin`
+- 上报问题：`python3 report_issue.py --skill-code my-skill --version 1.0.0 --error "ConnectionError" --message "连接超时" --issue-type bug --severity critical`
+- 管道上报：`python3 some_script.py 2>&1 | python3 report_issue.py --skill-code my-skill --version 1.0.0 --stdin --issue-type bug`
 - 查看问题：`python3 list_issues.py --skill-code my-skill`
 - 按状态筛选：`python3 list_issues.py --status open --severity error`
 - 统计概览：`python3 list_issues.py --stats`
