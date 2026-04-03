@@ -33,7 +33,7 @@ warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.
 DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
 API_BASE = DEFAULT_API_BASE
 
-API_URL = f"{API_BASE.rstrip('/')}/im/skill/upgrade"
+API_URL = f"{API_BASE.rstrip('/')}/api/skill/upgrade"
 
 
 def parse_api_response(response: requests.Response, action: str) -> dict:
@@ -68,9 +68,10 @@ def call_api(token: str, payload: dict) -> dict:
 
 
 def build_upgrade_payload(args) -> dict:
-    """构造升级 Skill 的请求体 (AiSkillUpgradeRequest)"""
+    """构造升级 Skill 的请求体 (ClawHubUpgradeRequest)"""
     payload = {
-        "code": args.code,
+        "name": args.code,
+        "skillCode": args.code,
     }
 
     if args.change_log:
@@ -80,7 +81,7 @@ def build_upgrade_payload(args) -> dict:
     if args.version:
         payload["version"] = args.version
 
-    # 保留旧参数的支持 (如果后端兼容)
+    # 保留元数据支持（后端 /upgrade 接口目前主要处理版本升级，元数据由 /update 处理）
     if args.name:
         payload["displayName"] = args.name
     if args.description:
