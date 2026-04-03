@@ -39,7 +39,7 @@ else:
     warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
     DEFAULT_API_BASE = 'https://skills.mediportal.com.cn'
-    API_BASE = os.environ.get('XG_SKILL_API_BASE') or os.environ.get('API_BASE') or DEFAULT_API_BASE
+    API_BASE = DEFAULT_API_BASE
     API_URL = f'{API_BASE.rstrip("/")}/api/skill/list'
 
     parser = argparse.ArgumentParser(description="发现 Skill — 浏览、搜索、查看详情")
@@ -85,5 +85,5 @@ else:
             print(f"  {s.get('code', '')} - {s.get('name', '')} - {(s.get('description') or '')[:40]}")
     else:
         for i, s in enumerate(skills, 1):
-            print(f"  {i}. {s.get('code', '')} ({s.get('name', '')}) v{s.get('clawVersion', '')}")
+            print(f"  {i}. {s.get('code', '')} ({s.get('name', '')}) v{s.get('version', '')}")
         print(f"\n共 {len(skills)} 个 Skill")

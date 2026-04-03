@@ -20,7 +20,7 @@
 | `description` | string | 否 | 新的描述 |
 | `downloadUrl` | string | 否 | 新的下载地址 |
 | `label` | string | 否 | 新的标签 |
-| `clawVersion` | string | 否 | 版本号（如 "1.0.0"） |
+| `version` | string | 否 | 版本号（如 "1.0.0"） |
 | `isInternal` | boolean | 否 | 是否为内部 Skill |
 
 ## 请求 Schema
@@ -30,7 +30,7 @@
   "code": "im-robot",
   "name": "IM 机器人管理 v2",
   "description": "更新后的描述",
-  "clawVersion": "1.0.0"
+  "version": "1.0.0"
 }
 ```
 

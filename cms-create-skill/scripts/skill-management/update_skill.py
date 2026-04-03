@@ -31,7 +31,7 @@ import warnings
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
 DEFAULT_API_BASE = 'https://skills.mediportal.com.cn'
-API_BASE = os.environ.get('XG_SKILL_API_BASE') or os.environ.get('API_BASE') or DEFAULT_API_BASE
+API_BASE = DEFAULT_API_BASE
 API_URL = f'{API_BASE.rstrip("/")}/api/skill/update'
 
 
@@ -80,7 +80,7 @@ def build_clawhub_payload(args) -> dict:
     if args.download_url:
         payload["downloadUrl"] = args.download_url
     if args.version:
-        payload["clawVersion"] = args.version
+        payload["version"] = args.version
 
     tags = [t.strip() for t in args.label.split(",") if t.strip()] if args.label else []
 

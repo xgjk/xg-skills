@@ -35,7 +35,7 @@ import warnings
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
 DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
-API_BASE = os.environ.get("XG_SKILL_API_BASE") or os.environ.get("API_BASE") or DEFAULT_API_BASE
+API_BASE = DEFAULT_API_BASE
 
 # 七牛上传凭证接口
 QINIU_AUTH_URL = f"{API_BASE.rstrip('/')}/api/qiniu/token"
