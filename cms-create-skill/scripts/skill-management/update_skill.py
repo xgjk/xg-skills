@@ -32,7 +32,7 @@ warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.
 
 DEFAULT_API_BASE = 'https://skills.mediportal.com.cn'
 API_BASE = DEFAULT_API_BASE
-API_URL = f'{API_BASE.rstrip("/")}/api/skill/update'
+API_URL = f"{API_BASE.rstrip('/')}/im/skill/upgrade"
 
 
 def parse_api_response(response: requests.Response, action: str) -> dict:
@@ -66,32 +66,35 @@ def call_api(token: str, payload: dict) -> dict:
         sys.exit(1)
 
 
-def build_clawhub_payload(args) -> dict:
-    """将 CLI 参数转换为 ClawHub 协议格式。"""
+def build_upgrade_payload(args) -> dict:
+    """构造升级 Skill 的请求体 (AiSkillUpgradeRequest)"""
     payload = {
-        
-        "skillCode": args.code,
+        "code": args.code,
     }
 
-    if args.name:
-        payload["displayName"] = args.name
-    if args.description:
-        payload["description"] = args.description
+    if args.change_log:
+        payload["changeLog"] = args.change_log
     if args.download_url:
         payload["downloadUrl"] = args.download_url
     if args.version:
         payload["version"] = args.version
 
-    tags = [t.strip() for t in args.label.split(",") if t.strip()] if args.label else []
-
-    payload["metadata"] = {
-        "openclaw": {
-            "tags": tags,
-        },
-        "xgjk": {
-            "isInternal": args.internal,
-        },
-    }
+    # 保留旧参数的支持 (如果后端兼容)
+    if args.name:
+        payload["displayName"] = args.name
+    if args.description:
+        payload["description"] = args.description
+    
+    if args.label or args.internal:
+        tags = [t.strip() for t in args.label.split(",") if t.strip()] if args.label else []
+        payload["metadata"] = {
+            "openclaw": {
+                "tags": tags,
+            },
+            "xgjk": {
+                "isInternal": args.internal,
+            },
+        }
 
     return payload
 
@@ -104,6 +107,7 @@ def main():
     parser.add_argument("--download-url", default="", help="新的下载地址")
     parser.add_argument("--label", default="", help="新的标签（逗号分隔）")
     parser.add_argument("--version", default="", help="版本号（semver 格式，如 1.2.0）")
+    parser.add_argument("--change-log", default="", help="升级说明 (可选)")
     parser.add_argument("--internal", action="store_true", help="标记为内部 Skill")
     args = parser.parse_args()
 
@@ -112,7 +116,7 @@ def main():
         print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
         sys.exit(1)
 
-    payload = build_clawhub_payload(args)
+    payload = build_upgrade_payload(args)
     result = call_api(token, payload)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
