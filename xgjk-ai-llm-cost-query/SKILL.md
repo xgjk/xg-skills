@@ -1,9 +1,6 @@
 ---
 name: AI费用查询
-description: >-
-  查询当前登录用户或指定姓名员工的 AI 费用与 Token 用量。
-  「查我的费用 / 查询费用 / 查 AI 费用」等未点名他人时，一律视为查当前用户：只调 llm-cost 脚本且不传 personId，不调用户搜索。
-  仅当用户明确要查某个具体姓名/同事时，才先按姓名搜索再查用量。
+description:查询当前登录用户或指定姓名员工的 AI 费用与 Token 用量。查我的费用 / 查询费用 / 查 AI 费用」等未点名他人时，一律视为查当前用户：只调 llm-cost 脚本且不传 personId，不调用户搜索。仅当用户明确要查某个具体姓名/同事时，才先按姓名搜索再查用量。
 skillcode: xgjk-ai-llm-cost-query
 dependencies:
   - cms-auth-skills
