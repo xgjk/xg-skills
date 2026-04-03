@@ -19,7 +19,7 @@ import os
 warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
 DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
-API_BASE = os.environ.get("XG_SKILL_API_BASE") or os.environ.get("API_BASE") or DEFAULT_API_BASE
+API_BASE = DEFAULT_API_BASE
 API_URL = f"{API_BASE.rstrip('/')}/api/skill/list"
 
 
@@ -116,7 +116,7 @@ def format_list(skills: list[dict]) -> str:
     for index, skill in enumerate(skills, 1):
         display_name = (skill.get("displayName") or skill.get("name") or "")[:22]
         skill_code = (skill.get("skillCode") or skill.get("name") or "")[:22]
-        version = (skill.get("clawVersion") or skill.get("version") or "")[:9]
+        version = (skill.get("version") or skill.get("version") or "")[:9]
         metadata = skill.get("metadata") or {}
         xgjk = metadata.get("xgjk") or {}
         internal = "是" if xgjk.get("isInternal") else "否"
@@ -138,7 +138,7 @@ def format_detail(skill: dict) -> str:
         f"显示名: {skill.get('displayName') or skill.get('name', '-')}",
         f"SkillCode: {skill.get('skillCode') or skill.get('name', '-')}",
         f"ID: {skill.get('id', '-')}",
-        f"版本: {skill.get('clawVersion', '-')}",
+        f"版本: {skill.get('version', '-')}",
         f"标签: {tags or '-'}",
         f"描述: {skill.get('description') or '-'}",
         f"下载地址: {skill.get('downloadUrl') or '-'}",
