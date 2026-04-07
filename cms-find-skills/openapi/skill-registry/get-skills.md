@@ -1,4 +1,4 @@
-# POST https://skills.mediportal.com.cn/api/skill/list
+# POST {API_BASE}/api/skill/list
 
 ## 作用
 
@@ -23,14 +23,12 @@
   "resultCode": 1,
   "data": [
     {
-      "id": "2037739875444424706",
-      "code": "cms-auth-skills",
-      "name": "cms-auth-skills",
+      "skillCode": "cms-auth-skills",
+      "displayName": "cms-auth-skills",
       "description": "cms基础 Skill — 登录授权、appKey 获取、access-token 获取",
       "version": "1.0.0",
       "downloadUrl": "https://filegpt-hn.file.mediportal.com.cn/cwork_skill/cms-auth-skills_1.0.zip",
-      "isInternal": true,
-      "createTime": "2026-03-28T03:53:40.000+00:00"
+      "metadata": { "openclaw": { "tags": [] }, "xgjk": { "isInternal": true } }
     }
   ]
 }
@@ -47,3 +45,4 @@
 
 - 浏览 / 搜索 / 详情：`../../scripts/skill_registry/get_skills.py`
 - 安装：`../../scripts/skill_registry/install_skill.py`
+- 校验：`../../scripts/skill_registry/verify_skill.py`
