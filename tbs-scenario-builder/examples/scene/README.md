@@ -11,17 +11,21 @@
 
 1. **鉴权预检**：执行任意 `scripts/scene/*.py` 前设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/SKILL.md`）。
 2. **意图路由**：加载 `openapi/scene/route-by-intent.md`，必要时先运行 `route-by-intent.py` 校验stdin 契约。
-3. **解析追问**：`parse-and-gap-ask` 补齐 9 项固定字段；用户侧最多 5 问且脱敏。若缺 `businessDomain`，必须按四选一追问：`临床推广` / `院外零售` / `学术合作` / `通用能力`。
+3. **解析追问**：`parse-and-gap-ask` 补齐 9 项固定字段；用户侧最多 5 问且脱敏。若缺业务领域（契约字段 `businessDomain`），必须按四选一追问：`临床推广` / `院外零售` / `学术合作` / `通用能力`。**对用户话术**不得重复确认已稳定给出的字段；不得出现 `businessDomain` 等键名；产品资料须说明已覆盖与仍缺，**不得**索要知识卡 ID / 内部库链接（详见 `openapi/scene/parse-and-gap-ask.md`）。
 4. **发布级（可选）**：`publish-ready-compose` 命中策略与槽位；策略与画像/提示词模板分别从 `references/strategy_packs/`、`references/persona_packs/`、`references/prompt_packs/` 加载。
 5. **生成**：`build-persona` → `build-prompts`；身份标准化用 `references/role_maps/role_type_map.json`。
 6. **写库准备**：`build-api-draft-dedup` 产出 `apiDraft` 与 `dedupEvidence` 形状。
 7. **终裁**：`validate-and-gate` 产出 `validationReport`。
 8. **落库**：仅 `passed=true` 且用户确认后，运行 `persist-and-execute.py`（子进程调用 `tbs_write_executor.py`）。
 
-## 回归用例
+## 对用户可见输出（强制）
 
-- 最小回归集合：`./regression/README.md`
-- 覆盖冲突路由、知识库覆盖分流、证据闸门、终检闭环。
+- 不向用户展示任何写库契约 JSON（含 `scenarioPack` / `apiDraft` 片段及「API Draft 配置」类代码块）或原始 `validationReport`；见 `SKILL.md`「用户可见输出规范」第 9 条。
+
+## 契约脚本回归用例（JSON）
+
+- 回归 payload **不在本技能包内**，位于与技能包同级的 **`tbs-scenario-builder-acceptance/regression/`**（说明见该目录 `README.md`；一键验收用 `test_user_visible_contract.py`）。
+- 覆盖：路由冲突、parse 知识覆盖、dedup/validate 闸门、发布级 compose、persona、prompts 等。
 
 ## 用户可能会说
 

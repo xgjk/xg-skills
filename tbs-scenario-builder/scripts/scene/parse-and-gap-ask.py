@@ -241,7 +241,7 @@ def main():
         "location": "本次拜访发生在什么机构与场景（门诊/病区/院外）？",
         "doctorConcerns": "主任当前最在意的是可及性、疗效证据，还是使用风险？",
         "repGoal": "本次沟通最想达成的一个结果是什么？",
-        "productEvidenceSource": "为保证内容准确，请提供该产品资料来源（说明书、知识卡或链接）。",
+        "productEvidenceSource": "为保证内容准确，请补充可核对的产品资料：说明书要点、关键研究摘要，或可公开访问的说明/文献链接（无需提供内部系统编号）。",
     }
     seen = set()
     for mf in missing_fields:

@@ -38,7 +38,7 @@ dependencies:
 4. 补齐用户必需输入；有文件/URL 素材时先抽取并摘要确认。
 5. 参考 `examples/scene/README.md` 组织话术与用户可见输出。
 6. **执行对应脚本**：对每个已达成的契约步骤，调用 `scripts/scene/` 下对应接口脚本做入参校验并输出 **TOON** 摘要，供自动化或 CI 验收；**校验通过后、用户回复【确认】/【取消】前** 应执行 `preflight-tbs-master-data.py`（对 `TBS_BASE_URL` 查询/创建业务领域、科室、药品，与 `TBS/TBS_API_REFERENCE.md` §4.4 一致）；**最终落库执行**仅当用户回复【确认】时才通过 `persist-and-execute.py` 触发本地 `tbs_write_executor.py`（与预检逻辑幂等，重复执行会命中已有记录）；用户回复【取消】则停止。
-7. **测 Skill**：以 OpenClaw 内启用本 Skill 的对话验收为主；契约层与离线解析回归的分工见 `docs/TEST_PLAN.md` §2.1。
+
 
 脚本使用规则（强制）：
 1. **每个业务接口必须有对应脚本**：`openapi/scene/` 下每个接口文档（如 `openapi/scene/route-by-intent.md`）都必须存在对应脚本（如 `scripts/scene/route-by-intent.py`），并保持 1:1 映射。
@@ -58,15 +58,17 @@ dependencies:
 用户可见输出规范（强制）：
 1. 每次解析后，必须按以下三段输出，不得省略：
    - 场景解析结果（业务领域、科室/地点、产品、顾虑、目标）
-   - 产品知识覆盖情况（`coveredNeeds`、`uncoveredNeeds`、`productEvidenceStatus`、`productEvidenceSource`）
+   - 产品知识覆盖情况（**用户侧用语**：已覆盖的知识主题、仍缺的主题、资料就绪程度的自然语言概括；**禁止**逐字输出契约键名如 `coveredNeeds`、`productEvidenceStatus`）
    - 结论与下一步（需要补充项、建议动作）
 2. 若 `productEvidenceStatus != READY`，禁止输出疗效/安全性定论，只能输出沟通框架与追问。
 3. “显式顾虑”仅可来自用户原话；“推断顾虑”必须可回溯到 API 证据来源。
 4. 若 `coveredNeeds` 非空，必须明确展示，不得只展示缺失项。
-5. 对用户仅输出自然语言解析与追问，不得暴露内部参数名、脚本字段路径或契约细节（如 `parsedFields`、`routeDecision`、JSONPath）。
+5. 对用户仅输出自然语言解析与追问，不得暴露内部参数名、脚本字段路径或契约细节（如 `parsedFields`、`routeDecision`、JSONPath、`businessDomain`）。
+5a. **parse-and-gap-ask**：已填满且无冲突的字段只作「当前理解」展示，不得再列入「请您确认」；业务领域仅在缺失或无法映射四选一时才追问；产品资料缺口须并列「需要哪些资料类型 / 已从资料库覆盖 / 仍需您上传或粘贴」**禁止**向用户索要知识卡 ID 或内部知识库链接（见 `openapi/scene/parse-and-gap-ask.md`「用户可见话术」）。
 6. 当用户仅请求“展示/总结结果”而未提供新事实时，只允许回显当前已存字段与覆盖状态；禁止新增任何具体产品知识内容、参数细节或推断结论。
 7. 用户可见主字段以 `scenarioPack` 为唯一真值来源；禁止从 `apiDraft.scenes.name`、`rep_briefing` 等文案字段反推覆盖结构化字段。
 8. 当检测到草稿字段冲突（如 `scenarioPack.product` 与文案字段不一致）时，必须先提示冲突并请求确认，不得自动选边展示。
+9. **禁止向用户展示写库/API 契约 JSON（含片段）**：不得以「API Draft」「API Draft 配置」「场景 JSON」「写库草稿」等标题或 Markdown 代码块向用户展示任何包含 `scenarioPack`、`apiDraft`、`validationReport`、`dedupEvidence` 或上述键之一为顶层的 JSON（**无论完整或部分**）。契约数据仅写入 `scenario_draft.json` / 供脚本与落库。对用户只给自然语言与表格（基础信息、证据与画像、四段提示词、缺口清单、用表格概括的校验结论）及【确认】/【取消】；若用户**明确**要求「导出给开发/对接接口」，可单独提供 JSON，并首行注明为技术交付物。
 
 宪章（必须遵守）：
 1. **只读索引**：`SKILL.md` 只描述「能做什么」与「去哪里读」，不写各接口完整参数表（参数在 `openapi/`）。

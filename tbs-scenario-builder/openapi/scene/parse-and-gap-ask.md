@@ -81,7 +81,7 @@
 | `repGoal` | string | 医药代表目标（单句、可执行） |
 | `productKnowledgeNeeds` | string[] | 产品知识需求主题（2-6 条） |
 | `productEvidenceStatus` | enum | `NOT_PROVIDED` / `PARTIAL` / `READY` |
-| `productEvidenceSource` | array | 已命中的资料来源标识（文件名/URL/知识卡 ID） |
+| `productEvidenceSource` | array | 已命中的资料来源标识（契约层：文件名/URL/系统检索回写的来源 token）；**对用户话术不得**要求用户自行提供此类标识 |
 
 **`product` 与 TBS 药品表（落库时）**：本阶段只需给出**准确、可匹配的产品名**（与业务口径一致）。用户确认落库后，`tbs_write_executor.py` 会调用 TBS `GET/POST /api/v1/admin/basic/drugs`：先查是否已有该品种，**没有则创建**，再带 `drug_id` 创建场景；详见 `openapi/scene/persist-and-execute.md` 与 `TBS/TBS_API_REFERENCE.md` §4.4 药品接口。
 
@@ -117,13 +117,35 @@
 
 - `../../scripts/scene/parse-and-gap-ask.py`
 
+## 用户可见话术（parse-and-gap-ask，强制）
+
+本节约束 **Agent 对用户的自然语言回复**；契约字段名仍可出现在 `scenarioPack` / 脚本入参中，但 **不得照抄到用户消息里**。
+
+1. **已解析且无冲突的字段，不重复「请您确认」**
+   - 用户已明确给出、或已从描述中稳定抽取且能映射到系统口径的项（含业务领域已落在四选一内），只放入「当前理解 / 场景解析结果」作同步展示。
+   - 仅当 **缺失**、**与用户原文矛盾**、或 **置信度不足需二选一** 时，才列入「需要您补充或确认」；不得把已成立的「临床推广」等再包装成待确认项。
+
+2. **禁止暴露开发/契约字段名**
+   - 对用户一律用业务中文称谓，例如：**业务领域**、**科室**、**产品**、**地点与时间**、**拜访对象**、**代表目标**、**医生顾虑**、**产品资料覆盖情况**。
+   - **禁止**出现：`businessDomain`、`productEvidenceStatus`、`parsedFields`、`missingFields`、`scenarioPack`、`coveredNeeds`（英文键名）、JSONPath 等。
+
+3. **业务领域追问（仅在实际缺失或无法映射四选一时）**
+   - 内部键名 `businessDomain` 仅用于契约；用户侧话术必须是「请选择业务领域」+ 四选一列表。
+   - 若已从用户描述判定为四选一之一且无冲突，**不要**再发起「业务领域是哪一个」类追问。
+
+4. **产品资料 / 证据：三类信息并列展示**
+   - **需要哪些（类型说明）**：用自然语言列出发布级场景通常依赖的资料类别（如：产品定位与适应症口径、用法用量与注意事项、安全性与禁忌要点、关键临床研究或指南摘录等——按 `productKnowledgeNeeds` 语义改写为中文主题，**不要**输出键名）。
+   - **已具备**：根据知识库预检结果，用「已从企业资料库关联到 / 已覆盖的主题：…」表述；可概括主题名称，**不要**罗列系统 ID。
+   - **仍需您补充**：仅列仍未覆盖的主题；引导用户 **上传文件、粘贴可引用摘要、或提供可公开访问的文献/说明书链接**。
+   - **禁止**向用户索要：`知识卡 ID`、内部知识库条目链接、任何需用户从后台复制的技术标识。此类由检索/API 或落库链路写入，用户只需提供内容素材。
+
 ## 缺口追问规范（强制）
 
 1. 对缺失字段做用户可见追问时，优先使用简短、可直接回答的问法。
 2. `businessDomain` 缺失时，必须使用固定四选一，不得开放式追问。
 3. 固定选项来源：`scripts/tbs_assets/system_business_domains.json`。
 
-**`businessDomain` 追问模板（推荐）**
+**业务领域追问模板（推荐，仅在实际缺失时使用）**
 
 ```text
 请选择业务领域（四选一）：
@@ -189,7 +211,7 @@
 ```
 
 - `sourceApi`：必须标识知识来源接口，默认要求 `/api/v1/admin/basic/knowledge`。
-- `source`：知识来源标识（文件名/URL/知识卡 ID）。
+- `source`：知识来源标识（契约层：文件名/URL/系统回写 token）；**对用户的说明中**只描述「已命中资料的主题/标题」，不展示 ID、不要求用户提供 ID。
 - `score`：检索相关度分值（0-1，供排序或阈值过滤）。
 - `coveredNeeds`：该命中项覆盖的知识需求主题（需与 `productKnowledgeNeeds` 同语义）。
 - `source` 默认仅接受 `api://` 或 `https://` 前缀（可通过环境变量 `TBS_KB_SOURCE_PREFIXES` 覆盖）。

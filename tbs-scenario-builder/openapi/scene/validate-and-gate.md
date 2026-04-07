@@ -70,3 +70,7 @@
 ## 脚本映射
 
 - `../../scripts/scene/validate-and-gate.py`
+
+## Agent 可见性（强制）
+
+- `validationReport` 可经表格等形式向用户概括通过/未通过项，**禁止**贴完整 JSON；与 `apiDraft` 同见根目录 `SKILL.md`「用户可见输出规范」第 9 条。
