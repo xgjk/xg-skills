@@ -5,7 +5,7 @@
 用途：将指定的 Skill 目录打包成 .zip 文件，用于后续上传到七牛
 
 使用方式：
-  python3 cms-create-skill/scripts/skill-management/pack_skill.py <skill-dir> [--output <output.zip>]
+  python3 cms-push-skill/scripts/skill-management/pack_skill.py <skill-dir> [--output <output.zip>]
 
 参数说明：
   skill-dir     Skill 目录路径（必须）
@@ -45,18 +45,37 @@ def pack_skill(skill_dir: str, output_path: str, emit_stdout: bool = False) -> s
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
 
+    skill_dir_real = os.path.realpath(skill_dir)
     file_count = 0
     with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for root, dirs, files in os.walk(skill_dir):
+        for root, dirs, files in os.walk(skill_dir, followlinks=False):
             # 跳过隐藏目录和 __pycache__
-            dirs[:] = [d for d in dirs if not d.startswith(".") and d != "__pycache__"]
+            dirs[:] = [
+                d for d in dirs
+                if not d.startswith(".")
+                and d != "__pycache__"
+                and not os.path.islink(os.path.join(root, d))
+            ]
             for f in files:
                 if f.startswith(".") or f.endswith(".pyc"):
                     continue
                 full_path = os.path.join(root, f)
+                # 跳过 symlink，避免越界写入或泄漏外部文件
+                if os.path.islink(full_path):
+                    print(f"跳过软链接: {full_path}", file=sys.stderr)
+                    continue
+                # 防止把输出 ZIP 自身打包进去
                 if os.path.realpath(full_path) == output_path_real:
                     continue
-                arc_name = os.path.join(skill_name, os.path.relpath(full_path, skill_dir))
+                # 确认仍在 skill_dir 内
+                if not os.path.realpath(full_path).startswith(skill_dir_real + os.sep):
+                    print(f"跳过越界文件: {full_path}", file=sys.stderr)
+                    continue
+                rel = os.path.relpath(full_path, skill_dir).replace(os.sep, "/")
+                if rel.startswith("..") or "/../" in f"/{rel}/":
+                    print(f"跳过越界相对路径: {rel}", file=sys.stderr)
+                    continue
+                arc_name = f"{skill_name}/{rel}"
                 zf.write(full_path, arc_name)
                 file_count += 1
 

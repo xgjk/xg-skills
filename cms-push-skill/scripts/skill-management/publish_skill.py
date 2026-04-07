@@ -44,24 +44,19 @@ import json
 import time
 import argparse
 import requests
-import warnings
 from urllib.parse import quote
-
-warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
 # 导入同目录下的模块
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, script_dir)
 
+from common import API_BASE, get_headers, get_token, parse_api_response
 from pack_skill import pack_skill
 from upload_to_qiniu import get_qiniu_token, upload_file
 from register_skill import call_api as register_api
 from update_skill import call_api as update_api
 
-DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
-API_BASE = DEFAULT_API_BASE
-
-ROBOT_SYNC_URL = f"{API_BASE.rstrip('/')}/api/robot/skill-sync"
+ROBOT_SYNC_URL = f"{API_BASE}/api/robot/skill-sync"
 
 EXTERNAL_DOWNLOAD_URL_TEMPLATE = "https://wry-manatee-359.convex.site/api/v1/download?slug={}"
 
@@ -110,10 +105,7 @@ def build_update_payload(args, download_url: str, is_internal: bool) -> dict:
 def dispatch_skill_sync(token: str, action: str, args, download_url: str,
                         sync_clawhub: bool, sync_github: bool) -> dict:
     """调用 /api/robot/skill-sync 派发机器人同步任务。"""
-    headers = {
-        "access-token": token,
-        "Content-Type": "application/json",
-    }
+    headers = get_headers(token)
     payload = {
         "action": action,
         "skillCode": args.code,
@@ -134,11 +126,7 @@ def dispatch_skill_sync(token: str, action: str, args, download_url: str,
         timeout=60,
     )
     response.raise_for_status()
-    data = response.json()
-    if isinstance(data, dict) and data.get("resultCode") not in (None, 1):
-        message = data.get("resultMsg") or data.get("detailMsg") or response.text
-        raise RuntimeError(f"派发同步任务失败: {message}")
-    return data
+    return parse_api_response(response, "派发同步任务")
 
 
 def main():
@@ -165,10 +153,7 @@ def main():
                         help="不同步到 GitHub")
     args = parser.parse_args()
 
-    token = os.environ.get("XG_USER_TOKEN") or os.environ.get("access-token") or os.environ.get("ACCESS_TOKEN")
-    if not token:
-        print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
-        sys.exit(1)
+    token = get_token()
 
     if args.internal and args.external:
         print("错误: --internal 和 --external 不能同时使用", file=sys.stderr)

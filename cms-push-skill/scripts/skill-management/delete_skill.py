@@ -16,35 +16,18 @@
 """
 
 import sys
-import os
 import json
 import argparse
 import requests
-import warnings
 
-# 禁用 InsecureRequestWarning (因为 verify=False)
-warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
+from common import API_BASE, get_headers, get_token, parse_api_response
 
-DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
-API_BASE = DEFAULT_API_BASE
-
-API_URL = f"{API_BASE.rstrip('/')}/api/skill/delete"
-
-
-def parse_api_response(response: requests.Response, action: str) -> dict:
-    data = response.json()
-    if isinstance(data, dict) and data.get("resultCode") not in (None, 1):
-        message = data.get("resultMsg") or data.get("detailMsg") or response.text
-        raise RuntimeError(f"{action}失败: {message}")
-    return data
+API_URL = f"{API_BASE}/api/skill/delete"
 
 
 def call_api(token: str, skill_id: str, reason: str = "") -> dict:
     """下架 Skill"""
-    headers = {
-        "access-token": token,
-        "Content-Type": "application/json",
-    }
+    headers = get_headers(token)
 
     payload = {"id": skill_id}
     if reason:
@@ -72,11 +55,7 @@ def main():
     parser.add_argument("--reason", default="", help="下架原因")
     args = parser.parse_args()
 
-    token = os.environ.get("XG_USER_TOKEN") or os.environ.get("access-token") or os.environ.get("ACCESS_TOKEN")
-    if not token:
-        print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
-        sys.exit(1)
-
+    token = get_token()
     result = call_api(token, args.id, args.reason)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

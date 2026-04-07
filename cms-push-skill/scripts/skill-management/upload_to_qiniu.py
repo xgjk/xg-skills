@@ -29,35 +29,19 @@ import os
 import time
 import argparse
 import requests
-import warnings
 
-# 禁用 InsecureRequestWarning (因为 verify=False)
-warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
-
-DEFAULT_API_BASE = "https://skills.mediportal.com.cn"
-API_BASE = DEFAULT_API_BASE
+from common import API_BASE, get_headers, get_token, parse_api_response
 
 # 七牛上传凭证接口
-QINIU_AUTH_URL = f"{API_BASE.rstrip('/')}/api/qiniu/token"
+QINIU_AUTH_URL = f"{API_BASE}/api/qiniu/token"
 
 # 七牛上传地址（z2 区域）
 QINIU_UPLOAD_URL = "https://up-z2.qiniup.com/"
 
 
-def parse_api_response(response: requests.Response, action: str) -> dict:
-    data = response.json()
-    if isinstance(data, dict) and data.get("resultCode") not in (None, 1):
-        message = data.get("resultMsg") or data.get("detailMsg") or response.text
-        raise RuntimeError(f"{action}失败: {message}")
-    return data
-
-
 def get_qiniu_token(access_token: str, file_key: str, corp_id: str = "") -> dict:
     """获取七牛上传凭证，返回 {token, domain}。"""
-    headers = {
-        "access-token": access_token,
-        "Content-Type": "application/json",
-    }
+    headers = get_headers(access_token)
     params = {"fileKey": file_key, "corpId": corp_id}
 
     try:
@@ -78,13 +62,10 @@ def get_qiniu_token(access_token: str, file_key: str, corp_id: str = "") -> dict
         raise RuntimeError(f"获取七牛凭证失败: {e}")
 
 
-def upload_file(qiniu_token: str, file_key: str, file_path: str) -> bool:
-    """通过 multipart/form-data 上传文件到七牛"""
+def upload_file(qiniu_token: str, file_key: str, file_path: str, max_retries: int = 3) -> bool:
+    """通过 multipart/form-data 上传文件到七牛，带指数退避重试。"""
     file_name = os.path.basename(file_path)
-    
-    # 我们不手动 open 文件，交给 requests 处理，或者用 with 确保关闭
-    # 但在 upload_file 这种函数里，如果我们要支持重定向重试，需要确保文件可以多次读取
-    
+
     def do_upload(url):
         with open(file_path, 'rb') as f:
             files = {'file': (file_name, f, 'application/octet-stream')}
@@ -98,24 +79,32 @@ def upload_file(qiniu_token: str, file_key: str, file_path: str) -> bool:
                 timeout=300,
             )
 
-    try:
-        response = do_upload(QINIU_UPLOAD_URL)
-        
-        # 处理七牛区域重定向 (400 错误且含有 "please use <host>")
-        if response.status_code == 400 and "please use" in response.text:
-            import re
-            region_match = re.search(r'please use\s+([a-z0-9.-]+)', response.text, re.IGNORECASE)
-            if region_match:
-                new_host = region_match.group(1)
-                new_url = f"https://{new_host}/"
-                print(f"区域重定向: {new_url}", file=sys.stderr)
-                response = do_upload(new_url)
+    last_err = None
+    for attempt in range(1, max_retries + 1):
+        response = None
+        try:
+            response = do_upload(QINIU_UPLOAD_URL)
 
-        response.raise_for_status()
-        return True
-    except Exception as e:
-        error_msg = response.text if 'response' in locals() else str(e)
-        raise RuntimeError(f"七牛上传失败: {error_msg}")
+            # 处理七牛区域重定向 (400 错误且含有 "please use <host>")
+            if response.status_code == 400 and "please use" in response.text:
+                import re
+                region_match = re.search(r'please use\s+([a-z0-9.-]+)', response.text, re.IGNORECASE)
+                if region_match:
+                    new_host = region_match.group(1)
+                    new_url = f"https://{new_host}/"
+                    print(f"区域重定向: {new_url}", file=sys.stderr)
+                    response = do_upload(new_url)
+
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            last_err = response.text if response is not None else str(e)
+            if attempt < max_retries:
+                backoff = 2 ** (attempt - 1)
+                print(f"七牛上传第 {attempt} 次失败，{backoff}s 后重试: {last_err}", file=sys.stderr)
+                time.sleep(backoff)
+            else:
+                raise RuntimeError(f"七牛上传失败（已重试 {max_retries} 次）: {last_err}")
 
 
 def main():
@@ -125,11 +114,7 @@ def main():
     parser.add_argument("--corp-id", default="", help="企业 ID（也可通过 XG_CORP_ID 环境变量设置）")
     args = parser.parse_args()
 
-    token = os.environ.get("XG_USER_TOKEN") or os.environ.get("access-token") or os.environ.get("ACCESS_TOKEN")
-    if not token:
-        print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
-        sys.exit(1)
-
+    token = get_token()
     corp_id = os.environ.get("XG_CORP_ID", "")
     corp_id = args.corp_id or corp_id
 
