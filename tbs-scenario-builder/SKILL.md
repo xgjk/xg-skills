@@ -13,7 +13,7 @@ dependencies:
 
 `scene` 模块为 **OpenClaw 编排契约层**逻辑端点（见宪章第 12 条）；鉴权与通用约束仍以 `cms-auth-skills/common/auth.md` 与 `cms-auth-skills/common/conventions.md` 为准。
 
-**当前版本**: v1.3
+**当前版本**: v1.4.0
 
 **接口版本**:
 - 场景编排契约端点：`/v1/scene/*`（逻辑端点，仅用于契约对照）
@@ -72,6 +72,7 @@ dependencies:
 4. **先读文档再执行**：执行前须阅读 `openapi/scene/api-index.md` 与目标 `endpoint.md`。
 5. **入参来源**：以 `openapi/scene/` 下对应接口文档的参数表与 Schema 为准。
 6. **鉴权一致**：涉及鉴权时，统一依赖 `cms-auth-skills/common/auth.md`；脚本入口默认通过 `XG_USER_TOKEN` 提供 `access-token`，不向用户追问 token 实现细节。
+6a. **鉴权口径（强制）**：对 `https://sg-tbs-manage.mediportal.com.cn` 的写库调用，统一使用 `XG_USER_TOKEN`（来自 `cms-auth-skills`）透传 `access-token`。出现 401/403 时先走 `cms-auth-skills` 刷新 token 并重试；**禁止**向用户索要所谓 “TBS 专属 appKey / access-token”。
 7. **参数驱动硬约束**：所有脚本不得使用硬编码业务词表或文本兜底推断；必须依赖上游传参结果。
 
 意图路由与加载规则（强制）：

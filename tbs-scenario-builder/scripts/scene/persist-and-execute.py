@@ -130,6 +130,10 @@ def main():
                     "probeUrl": base_url.rstrip("/") + "/api/v1/admin/basic/business-domains",
                     "probeStatus": probe_status,
                     "probeError": probe_error,
+                    "hint": (
+                        "Auth probe failed. Refresh XG_USER_TOKEN via cms-auth-skills and retry; "
+                        "do not request a separate TBS-specific appKey/access-token."
+                    ),
                 }
             )
         )

@@ -16,7 +16,7 @@
 ## 失败回退路径（2 步）
 
 1. **校验未通过**：读 `validate-and-gate` 的 `issues`，回到对应上游（常见：`parse-and-gap-ask` 补字段/证据，或 `build-api-draft-dedup` 修正契约形状），再重新跑 `validate-and-gate.py`，直到 `passed=true`。
-2. **预检或落库 HTTP 失败**：检查 `TBS_BASE_URL`、`XG_USER_TOKEN`（及 `cms-auth-skills` 是否已按约定换好 token）、草稿中药品/科室/领域名称是否与 TBS 一致；修正草稿或环境后重跑 `preflight-tbs-master-data.py`，再视用户意愿执行 `persist-and-execute.py`。
+2. **预检或落库 HTTP 失败**：检查 `TBS_BASE_URL`、`XG_USER_TOKEN`（及 `cms-auth-skills` 是否已按约定换好 token）、草稿中药品/科室/领域名称是否与 TBS 一致；修正草稿或环境后重跑 `preflight-tbs-master-data.py`，再视用户意愿执行 `persist-and-execute.py`。若返回 401/403，先刷新 `cms-auth-skills` token 并重试，**不要**向用户索要 “TBS 专属 appKey/access-token”。
 
 ## 标准流程
 
