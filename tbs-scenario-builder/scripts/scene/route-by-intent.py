@@ -9,14 +9,10 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from auth_token import require_access_token
 from toon_encoder import encode as toon_encode
 
 API_URL = "https://scenario-builder.openclaw.internal/v1/scene/route-by-intent"
-
-def _require_token():
-    if not os.environ.get("XG_USER_TOKEN"):
-        print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
-        sys.exit(1)
 
 def _read_body():
     raw = sys.stdin.read()
@@ -29,7 +25,7 @@ def _ok(step, **extra):
     print(toon_encode(payload))
 
 def main():
-    _require_token()
+    require_access_token()
     body = _read_body()
     user_text = (body.get("userText") or "").strip()
     if not user_text:

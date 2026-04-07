@@ -2,10 +2,10 @@
 
 ## 作用
 
-从自然语言抽取场景必填字段并标记缺口（Agent 执行；脚本校验草案形状）。
+从自然语言抽取场景字段并标记缺口（Agent 执行；脚本对**核心五元组**做硬性校验，其余字段按发布级在后续步骤与闸门补齐）。
 
 **Headers**
-- `access-token`：由会话/脚本环境提供；执行脚本前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/SKILL.md`）。
+- `access-token`：由会话/脚本环境提供；执行脚本前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/common/auth.md`）。
 - `Content-Type: application/json`
 
 **鉴权类型**

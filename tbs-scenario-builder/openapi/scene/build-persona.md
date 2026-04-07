@@ -5,7 +5,7 @@
 生成 personaBase/personaOverlay（Agent 执行；脚本校验 roleSetup 存在）。
 
 **Headers**
-- `access-token`：由会话/脚本环境提供；执行脚本前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/SKILL.md`）。
+- `access-token`：由会话/脚本环境提供；执行脚本前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/common/auth.md`）。
 - `Content-Type: application/json`
 
 **鉴权类型**

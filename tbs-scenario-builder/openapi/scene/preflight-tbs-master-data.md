@@ -8,7 +8,7 @@
 
 **Headers**
 
-- `access-token`：执行前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/SKILL.md`）。
+- `access-token`：执行前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/common/auth.md`）。
 - 实际 HTTP 目标为 `TBS_BASE_URL`（默认生产环境见 `persist-and-execute` / executor）。
 
 **鉴权类型**

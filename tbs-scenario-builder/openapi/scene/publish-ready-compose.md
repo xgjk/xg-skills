@@ -5,7 +5,7 @@
 publish_ready 模式下的策略与槽位（Agent 执行；脚本校验开关）。
 
 **Headers**
-- `access-token`：由会话/脚本环境提供；执行脚本前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/SKILL.md`）。
+- `access-token`：由会话/脚本环境提供；执行脚本前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/common/auth.md`）。
 - `Content-Type: application/json`
 
 **鉴权类型**

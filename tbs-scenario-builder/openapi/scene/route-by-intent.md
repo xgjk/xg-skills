@@ -5,7 +5,7 @@
 根据用户消息与会话状态给出主意图与下一跳步骤（由 Agent 推理；脚本做最小契约校验）。
 
 **Headers**
-- `access-token`：由会话/脚本环境提供；执行脚本前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/SKILL.md`）。
+- `access-token`：由会话/脚本环境提供；执行脚本前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/common/auth.md`）。
 - `Content-Type: application/json`
 
 **鉴权类型**

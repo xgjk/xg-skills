@@ -10,6 +10,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from auth_token import require_access_token
 from toon_encoder import encode as toon_encode
 from scenario_pack_normalizer import normalize_scenario_pack
 
@@ -20,11 +21,6 @@ API_SOURCE_PREFIXES = tuple(
 REQUIRE_KB_API = os.environ.get("TBS_REQUIRE_KB_API", "1") == "1"
 KNOWLEDGE_API_PATH = os.environ.get("TBS_KNOWLEDGE_API_PATH", "/api/v1/admin/basic/knowledge")
 _TOKEN_PAT = re.compile(r"[\s\-_:/（）()，,。；;、]+")
-
-def _require_token():
-    if not os.environ.get("XG_USER_TOKEN"):
-        print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
-        sys.exit(1)
 
 def _read_body():
     raw = sys.stdin.read()
@@ -207,7 +203,7 @@ def _coverage_from_search_result(search_result: dict, needs: list) -> tuple[str,
     return "NOT_PROVIDED", sources, [], list(needs)
 
 def main():
-    _require_token()
+    require_access_token()
     body = _read_body()
     user_text = (body.get("userText") or "").strip()
     if not user_text:

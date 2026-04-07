@@ -11,6 +11,7 @@ import urllib.error
 import urllib.request
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from auth_token import resolve_access_token
 from toon_encoder import encode as toon_encode
 
 API_URL = "https://scenario-builder.openclaw.internal/v1/scene/persist-and-execute"
@@ -43,13 +44,6 @@ def _assets_dir() -> str:
     if os.path.isdir(candidate2):
         return candidate2
     return _runtime_dir()
-
-
-def _resolve_access_token():
-    env_token = os.environ.get("XG_USER_TOKEN")
-    if env_token:
-        return env_token, "env:XG_USER_TOKEN"
-    return None, None
 
 
 def _auth_probe(base_url: str, access_token: str, insecure_ssl: bool = True):
@@ -110,7 +104,7 @@ def main():
         sys.exit(2)
     assets_dir = _assets_dir()
     base_url = os.environ.get("TBS_BASE_URL", "https://sg-tbs-manage.mediportal.com.cn")
-    access_token, token_source = _resolve_access_token()
+    access_token, token_source = resolve_access_token()
     if not access_token:
         print(
             toon_encode(

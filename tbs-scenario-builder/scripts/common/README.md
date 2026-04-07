@@ -11,6 +11,7 @@
 | 脚本 | 对应接口 | 用途 |
 |---|---|---|
 | `toon_encoder.py` | （内部工具） | 将结构化 JSON 压缩为 TOON 字符串，用于脚本契约输出 |
+| `auth_token.py` | （内部工具） | 从环境变量 `XG_USER_TOKEN` 解析 access-token（`strip` 后使用） |
 
 ## 使用方式
 

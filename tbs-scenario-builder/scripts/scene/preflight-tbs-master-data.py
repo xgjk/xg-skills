@@ -9,17 +9,12 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from auth_token import resolve_access_token
 from toon_encoder import encode as toon_encode  # type: ignore[reportMissingImports]
 
 from tbs_master_data_resolve import TBSClient, resolve_ids_for_scene
 
 API_URL = "https://scenario-builder.openclaw.internal/v1/scene/preflight-tbs-master-data"
-
-
-def _require_token():
-    if not os.environ.get("XG_USER_TOKEN"):
-        print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
-        sys.exit(1)
 
 
 def _normalize_scenes(api_draft: dict):
@@ -37,7 +32,7 @@ def main():
         help="Path to draft JSON (default: stdin only if not set; use - for stdin file)",
     )
     ap.add_argument("--base-url", default=os.environ.get("TBS_BASE_URL", "https://sg-tbs-manage.mediportal.com.cn"))
-    ap.add_argument("--access-token", default=os.environ.get("XG_USER_TOKEN"))
+    ap.add_argument("--access-token", default=None)
     ap.add_argument("--insecure-ssl", action="store_true", help="Skip SSL certificate verification.")
     ap.add_argument(
         "--dry-run",
@@ -46,8 +41,9 @@ def main():
     )
     args = ap.parse_args()
 
-    _require_token()
-    if not args.access_token:
+    env_token, _ = resolve_access_token()
+    access_token = (args.access_token or env_token or "").strip()
+    if not access_token:
         print("错误: 缺少 access-token / XG_USER_TOKEN", file=sys.stderr)
         sys.exit(1)
 
@@ -66,7 +62,7 @@ def main():
 
     client = TBSClient(
         base_url=args.base_url,
-        access_token=args.access_token,
+        access_token=access_token,
         insecure_ssl=bool(args.insecure_ssl),
     )
 

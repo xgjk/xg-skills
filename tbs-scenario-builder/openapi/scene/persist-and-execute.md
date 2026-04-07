@@ -16,7 +16,7 @@
 **与 `preflight-tbs-master-data` 的关系**：若在落库前已运行 `preflight-tbs-master-data.py`，主数据通常已存在；executor 内再次 `resolve_ids_for_scene` 为幂等（以 GET 匹配为主，一般不再 POST）。
 
 **Headers**
-- `access-token`：由会话/脚本环境提供；执行脚本前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/SKILL.md`）。
+- `access-token`：由会话/脚本环境提供；执行脚本前须设置 `XG_USER_TOKEN`（鉴权约定见 `cms-auth-skills/common/auth.md`）。
 - `Content-Type: application/json`
 
 **鉴权类型**

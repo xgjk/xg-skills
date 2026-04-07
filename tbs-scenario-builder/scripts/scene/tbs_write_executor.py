@@ -10,6 +10,7 @@ import urllib.error
 import urllib.request
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from auth_token import resolve_access_token
 from toon_encoder import encode as toon_encode  # type: ignore
 
 from tbs_master_data_resolve import (
@@ -960,7 +961,7 @@ def main():
     )
     ap.add_argument("--scene-id", default=None, help="If provided, skip scene creation and only generate snapshot+publish for this scene.")
     ap.add_argument("--base-url", default=os.environ.get("TBS_BASE_URL", "https://sg-tbs-manage.mediportal.com.cn"))
-    ap.add_argument("--access-token", default=os.environ.get("XG_USER_TOKEN"))
+    ap.add_argument("--access-token", default=None)
     ap.add_argument("--insecure-ssl", action="store_true", help="Skip SSL certificate verification (staging only).")
     ap.add_argument("--persisted-ids", default=os.path.join(_RUNTIME_DIR, "P1_persisted_ids.md"))
     ap.add_argument("--dry-run", action="store_true")
@@ -968,12 +969,14 @@ def main():
     args = ap.parse_args()
     strict_param_only = True if os.environ.get("TBS_STRICT_PARAM_ONLY", "1") == "1" else bool(args.strict_param_only)
 
-    if not args.access_token:
+    env_token, _ = resolve_access_token()
+    access_token = (args.access_token or env_token or "").strip()
+    if not access_token:
         raise SystemExit("Missing --access-token / env XG_USER_TOKEN")
 
     client = TBSClient(
         base_url=args.base_url,
-        access_token=args.access_token,
+        access_token=access_token,
         insecure_ssl=bool(args.insecure_ssl),
     )
 

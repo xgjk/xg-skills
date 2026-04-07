@@ -10,16 +10,12 @@ import re
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from auth_token import require_access_token
 from toon_encoder import encode as toon_encode
 from scenario_pack_normalizer import normalize_scenario_pack
 
 API_URL = "https://scenario-builder.openclaw.internal/v1/scene/build-api-draft-dedup"
 ALLOWED_EVIDENCE_STATUS = {"NOT_PROVIDED", "PARTIAL", "READY"}
-
-def _require_token():
-    if not os.environ.get("XG_USER_TOKEN"):
-        print("错误: 请设置环境变量 XG_USER_TOKEN", file=sys.stderr)
-        sys.exit(1)
 
 def _read_body():
     raw = sys.stdin.read()
@@ -57,7 +53,7 @@ def _contains_blocked_fact_phrases(node, blocked_phrases):
     return False
 
 def main():
-    _require_token()
+    require_access_token()
     body = _read_body()
     sp = body.get("scenarioPack")
     api_draft = body.get("apiDraft")
