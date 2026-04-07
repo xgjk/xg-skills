@@ -193,7 +193,7 @@ def merge_myclaw_config(
     config: dict[str, Any],
     *,
     agent_id: str,
-    robot_app_key: str,
+    app_key: str,
     robot_name: str,
     base_url: str | None,
     ws_base_url: str | None,
@@ -218,7 +218,7 @@ def merge_myclaw_config(
     accounts['default'] = default_account
 
     target_account = _safe_dict(accounts.get(agent_id))
-    target_account['appKey'] = robot_app_key
+    target_account['appKey'] = app_key
     target_account['agentId'] = agent_id
     target_account['name'] = robot_name
     accounts[agent_id] = target_account

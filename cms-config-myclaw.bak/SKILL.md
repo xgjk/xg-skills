@@ -1,6 +1,6 @@
 ---
 name: cms-config-myclaw
-description: 一键交互式配置自己的 OpenClaw（龙虾）机器人，把公司内部 xg_cwork_im channel 绑定到指定 agent。
+description: 一键交互式配置自己的 OpenClaw（龙虾）机器人，并查看自己已有的机器人。
 skillcode: cms-config-myclaw
 dependencies:
   - cms-auth-skills
@@ -8,11 +8,10 @@ dependencies:
 
 # cms-config-myclaw
 
-**版本**: v1.0.3
-
-这个 skill 只做一件事：
+这个 skill 用来完成两件事：
 
 1. 配置并绑定自己的 `xg_cwork_im` 机器人到某个 OpenClaw agent
+2. 查看自己当前账号下已经有哪些机器人
 
 在这个 skill 里，用户提到“龙虾”或“虾”时，都默认等同于 `OpenClaw`。
 
@@ -27,6 +26,8 @@ dependencies:
 - “把龙虾接到公司内部通道上”
 - “把 xg_cwork_im 绑定到某个 agent”
 - “重建我的龙虾机器人配置”
+- “查看我的机器人”
+- “获取我的私人助理列表”
 
 ## 绑定的意义
 
@@ -57,21 +58,19 @@ dependencies:
 
 所以整个 skill 的目标其实是把下面这条链路打通：
 
-`登录 appKey -> cms-auth-skills -> access-token -> 创建机器人 -> 返回 robot appKey + agentId -> 写入 channels/accounts/bindings -> 重启 Gateway -> 打开互动页面发消息`
+`appKey -> cms-auth-skills -> access-token -> 创建机器人 -> 安装/启用插件 -> 写入 channels/accounts/bindings -> 重启 Gateway -> 打开互动页面发消息`
 
 ## 配置前用户需要准备什么
 
 用户只需要准备：
 
-1. 一个可用的工作协同登录 `appKey`
+1. 一个可用的工作协同 `appKey`
 2. 想绑定到哪个 agent
 3. 想给机器人起什么名字
 
 其中：
 
-- 这里向用户索要的 `appKey` 只用于登录鉴权、换取 `access-token`
-- 创建机器人成功后，接口会返回另一份 `robot appKey`，实际写入 `channels.xg_cwork_im.accounts`
-- 如果上下文或已有参数里已经有登录 `appKey`，默认直接复用
+- 如果上下文或已有参数里已经有 `appKey`，默认直接复用
 - `avatar`、`groupLabel`、`remark` 都不是必要输入，统一使用默认空值
 
 ## CLI 交互应该怎么引导
@@ -80,7 +79,7 @@ dependencies:
 
 1. 先告诉用户“这是什么、为什么要绑定、完成后能怎么用”
 2. 再列出全部 agent，让用户选择
-3. 再收集登录 `appKey` 和机器人名称
+3. 再收集 `appKey` 和机器人名称
 4. 在真正写入前展示执行摘要，并解释本次绑定会产生什么效果
 5. 配置写入完成后，先告诉用户“已经配置完成”，再提示即将重启 Gateway
 6. 重启后明确告诉用户去打开互动链接，并建议发一条测试消息验证
@@ -91,7 +90,7 @@ dependencies:
 
 1. 运行 `setup_myclaw.py`
 2. 按提示选择一个 agent
-3. 输入或复用登录 `appKey`
+3. 输入或复用 `appKey`
 4. 输入机器人名称
 5. 确认执行
 6. 等待脚本自动完成注册、插件检查、配置写入和 Gateway 重启
@@ -135,10 +134,21 @@ npx clawhub@latest install cms-auth-skills --force
 python3 cms-config-myclaw/scripts/setup_myclaw.py
 ```
 
-如果已经有可复用的登录 `appKey`，默认优先复用，不要重复追问。可以直接这样执行：
+查看我已有的机器人：
+
+```bash
+npx clawhub@latest install cms-auth-skills --force
+python3 cms-config-myclaw/scripts/list_my_robots.py
+```
+
+如果已经有可复用的 `appKey`，默认优先复用，不要重复追问。可以直接这样执行：
 
 ```bash
 CMS_CONFIG_MYCLAW_APP_KEY=your_app_key python3 cms-config-myclaw/scripts/setup_myclaw.py
+```
+
+```bash
+CMS_CONFIG_MYCLAW_APP_KEY=your_app_key python3 cms-config-myclaw/scripts/list_my_robots.py
 ```
 
 ## 交互规则
@@ -146,14 +156,13 @@ CMS_CONFIG_MYCLAW_APP_KEY=your_app_key python3 cms-config-myclaw/scripts/setup_m
 1. 默认只通过脚本执行，不默认手工改 `openclaw.json`。
 2. 任何写操作前都必须向用户展示摘要并获得确认。
 3. 如果目标 agent 已有 `xg_cwork_im` account 或 binding，必须先展示旧状态，再确认是否覆盖。
-4. 这个 skill 依赖 `cms-auth-skills`，登录 `appKey -> access-token` 统一交给依赖 skill 处理。
+4. 这个 skill 依赖 `cms-auth-skills`，`appKey -> access-token` 统一交给依赖 skill 处理。
 5. 当脚本已经列出全部 agent 后，后续说明里也必须继续完整列出，不要把候选缩成少数几个推荐项。
-6. 交互式向导默认只向用户询问必要信息：登录 `appKey` 和机器人名称；`avatar`、`groupLabel`、`remark` 使用默认空值。
-7. 如果上下文、已有记忆或已知参数里已经存在可用登录 `appKey`，默认直接复用；只有在没有现成 `appKey`，或用户明确要求更换时才再问。
-8. 不要把用户输入的登录 `appKey` 和创建机器人接口返回的 `robot appKey` 混为一谈；真正写入 `channel account` 的是后者。
-9. 每次执行时，都要让用户明确知道“当前进行到哪一步、下一步会发生什么”，保持 CLI 交互的连续感。
-10. 不要把引导文案写死到某个固定 agent、固定角色或固定业务场景上；应尽量围绕用户当前选择的 agent 动态说明。
-11. 对用户的解释重点应围绕“这是公司内部 channel 的接入与绑定”，而不是只围绕配置文件字段本身。
+6. 交互式向导默认只向用户询问必要信息：`appKey` 和机器人名称；`avatar`、`groupLabel`、`remark` 使用默认空值。
+7. 如果上下文、已有记忆或已知参数里已经存在可用 `appKey`，默认直接复用；只有在没有现成 `appKey`，或用户明确要求更换时才再问。
+8. 每次执行时，都要让用户明确知道“当前进行到哪一步、下一步会发生什么”，保持 CLI 交互的连续感。
+9. 不要把引导文案写死到某个固定 agent、固定角色或固定业务场景上；应尽量围绕用户当前选择的 agent 动态说明。
+10. 对用户的解释重点应围绕“这是公司内部 channel 的接入与绑定”，而不是只围绕配置文件字段本身。
 
 ## 可选参数
 
@@ -163,4 +172,12 @@ python3 cms-config-myclaw/scripts/setup_myclaw.py --dry-run
 
 ```bash
 python3 cms-config-myclaw/scripts/setup_myclaw.py --config-file /path/to/openclaw.json
+```
+
+```bash
+python3 cms-config-myclaw/scripts/list_my_robots.py --json
+```
+
+```bash
+python3 cms-config-myclaw/scripts/list_my_robots.py --show-app-key
 ```

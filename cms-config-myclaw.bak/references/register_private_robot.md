@@ -3,11 +3,10 @@
 ## 登录换 token
 
 - 本 skill 不再自行实现登录换 token；统一依赖 `cms-auth-skills` 获取 `access-token`。
-- 这里的 `appKey` 指的是登录鉴权用的工作协同 key，不是机器人创建成功后返回的 `robot appKey`。
 - 地址：`GET https://sg-cwork-web.mediportal.com.cn/user/login/appkey`
 - Query：
   - `appCode=cms_gpt`
-  - `appKey=<登录用工作协同 key>`
+  - `appKey=<工作协同 key>`
 - 目标：由 `cms-auth-skills` 从返回体 `data.xgToken / data.token / data.access-token` 中拿到 `access-token`
 
 ## 创建机器人
@@ -25,7 +24,7 @@
 ## 关键返回字段
 
 - `data.agentId`
-- `data.appKey`：机器人自己的 `robot appKey`
+- `data.appKey`
 - `data.baseUrl`
 - `data.wsBaseUrl`
 - `data.name`
@@ -33,8 +32,6 @@
 
 ## 本 skill 的落地约定
 
-- 向用户索要的是登录 `appKey`，只用于换取 `access-token`
-- 实际写入 `channels.xg_cwork_im.accounts` 的 `appKey`，必须使用创建机器人接口返回的 `data.appKey`
 - `channels.xg_cwork_im.accounts` 的 key 固定等于用户选择的 `agentId`
 - 写入 account 结构：
 

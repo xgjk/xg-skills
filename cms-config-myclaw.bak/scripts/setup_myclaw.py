@@ -2,155 +2,24 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import shutil
 import subprocess
 import sys
 import time
-import warnings
 from getpass import getpass
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
+from http_support import RequestFailure, ensure_result_success, extract_result_data, mask_secret, request_json, stringify
 from openclaw_config import DEFAULT_BASE_URL, DEFAULT_WS_BASE_URL, backup_config, format_existing_state, get_agents, load_config, merge_myclaw_config, restore_config, save_config, summarize_agent, summarize_existing_state
-
-try:
-    import requests
-except ImportError:
-    requests = None
-
-if requests is not None:
-    try:
-        warnings.filterwarnings(
-            'ignore',
-            category=requests.packages.urllib3.exceptions.InsecureRequestWarning,
-        )
-    except Exception:
-        pass
 
 ROBOT_REGISTER_URL = 'https://sg-al-cwork-api.mediportal.com.cn/im/robot/private/register'
 WEB_INTERACT_URL = 'https://sg-al-cwork-web.mediportal.com.cn/xg-claw/web/dist/'
 PLUGIN_ID = 'xg_cwork_im'
 PLUGIN_SPEC = '@xgjktech/xg_cwork_im'
 DEFAULT_CONFIG_PATH = Path('~/.openclaw/openclaw.json').expanduser()
-
-
-class RequestFailure(RuntimeError):
-    pass
-
-
-def stringify(value: Any) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    if not text or text.lower() in {'null', 'none', 'undefined'}:
-        return None
-    return text
-
-
-def pick_non_empty(*values: Any) -> str | None:
-    for value in values:
-        text = stringify(value)
-        if text:
-            return text
-    return None
-
-
-def mask_secret(value: Any) -> str:
-    text = stringify(value)
-    if not text:
-        return '***'
-    if len(text) <= 6:
-        return '***'
-    return text[:6] + '***'
-
-
-def extract_result_data(payload: dict[str, Any]) -> dict[str, Any]:
-    data = payload.get('data')
-    return data if isinstance(data, dict) else {}
-
-
-def extract_result_message(payload: dict[str, Any], fallback: str = '未知错误') -> str:
-    return pick_non_empty(
-        payload.get('resultMsg'),
-        payload.get('detailMsg'),
-        payload.get('message'),
-        fallback,
-    ) or fallback
-
-
-def ensure_result_success(payload: dict[str, Any], fallback: str) -> None:
-    code = payload.get('resultCode')
-    if code in (0, 1, 200):
-        return
-    alt_code = payload.get('code')
-    if alt_code == 200:
-        return
-    raise RequestFailure(f'{fallback}: {extract_result_message(payload, fallback)}')
-
-
-def request_json(
-    url: str,
-    *,
-    method: str = 'GET',
-    params: dict[str, Any] | None = None,
-    body: dict[str, Any] | None = None,
-    headers: dict[str, str] | None = None,
-    timeout: int = 60,
-    retries: int = 3,
-) -> dict[str, Any]:
-    if requests is None:
-        raise RequestFailure('请求失败: 缺少 requests 依赖，请先安装 requests')
-
-    request_headers = {'Content-Type': 'application/json'}
-    if headers:
-        request_headers.update(headers)
-
-    last_error: Exception | None = None
-    for attempt in range(1, retries + 1):
-        try:
-            response = requests.request(
-                method=method.upper(),
-                url=url,
-                params=params,
-                json=body if method.upper() != 'GET' else None,
-                headers=request_headers,
-                verify=False,
-                allow_redirects=True,
-                timeout=timeout,
-            )
-            response.raise_for_status()
-        except Exception as exc:
-            status = 'N/A'
-            raw_text = str(exc)
-            response = getattr(exc, 'response', None)
-            if response is not None:
-                status = response.status_code
-                try:
-                    raw_text = response.text
-                except Exception:
-                    pass
-            last_error = RequestFailure(f'请求失败 (HTTP {status}): {raw_text[:300] or exc}')
-            if response is not None and 500 <= response.status_code < 600 and attempt < retries:
-                time.sleep(1)
-                continue
-            if response is None and attempt < retries:
-                time.sleep(1)
-                continue
-            raise last_error from exc
-
-        try:
-            payload = response.json()
-        except ValueError as exc:
-            raise RequestFailure(f'接口返回了无法解析的 JSON: {exc}') from exc
-
-        if not isinstance(payload, dict):
-            raise RequestFailure('接口返回格式异常：期望 JSON object')
-        return payload
-
-    raise RequestFailure(str(last_error or '请求失败'))
 
 
 def resolve_cms_auth_login_script() -> Path:
@@ -175,7 +44,7 @@ def resolve_cms_auth_login_script() -> Path:
 def get_access_token(app_key: str) -> str:
     normalized = stringify(app_key)
     if not normalized:
-        raise RequestFailure('登录失败：登录 appKey 不能为空')
+        raise RequestFailure('登录失败：appKey 不能为空')
 
     result = subprocess.run(
         [sys.executable, str(resolve_cms_auth_login_script()), '--ensure', '--app-key', normalized],
@@ -207,15 +76,14 @@ def print_intro() -> None:
     print('2. 把这台机器人绑定到你选择的 OpenClaw agent')
     print('3. 写入 OpenClaw 配置并重启 Gateway，使绑定正式生效')
     print('\n开始前你只需要准备：')
-    print('1. 一个可用的工作协同登录 key(appKey)，仅用于登录鉴权换 access-token')
+    print('1. 一个可用的工作协同 key(appKey)')
     print('2. 想绑定到哪个 agent')
     print('3. 你希望这个机器人显示成什么名字')
     print('\n接下来你会经历这几个步骤：')
     print('1. 先选择要绑定的 agent')
-    print('2. 再确认登录 appKey 和机器人名称')
-    print('3. 脚本先用登录 appKey 换 access-token，再创建机器人')
-    print('4. 创建成功后拿到机器人自己的 appKey，并把它写入 OpenClaw 配置')
-    print('5. 最后自动重启 Gateway，并给你互动链接')
+    print('2. 再确认 appKey 和机器人名称')
+    print('3. 脚本自动完成注册机器人、检查插件、写入配置')
+    print('4. 最后自动重启 Gateway，并给你互动链接')
     print('\n为什么要绑定？')
     print('因为这个插件本质上是一个公司内部 channel。')
     print('只有完成绑定后，这个 channel 进来的消息，才会被路由到你选中的 OpenClaw agent。')
@@ -489,24 +357,24 @@ def choose_agent(agents: list[dict[str, Any]]) -> dict[str, Any]:
         print('未找到对应 agent，请重新输入。')
 
 
-def collect_inputs(prefilled_login_app_key: str | None = None) -> dict[str, str]:
+def collect_inputs(prefilled_app_key: str | None = None) -> dict[str, str]:
     print_title('输入配置参数')
-    if prefilled_login_app_key:
-        login_app_key = prefilled_login_app_key
-        print(f'登录用工作协同 key(appKey): 使用已有值 ({mask_secret(login_app_key)})')
-        login_app_key_source = 'prefilled'
+    if prefilled_app_key:
+        app_key = prefilled_app_key
+        print(f'工作协同 key(appKey): 使用已有值 ({mask_secret(app_key)})')
+        app_key_source = 'prefilled'
     else:
-        login_app_key = prompt_required('请输入登录用工作协同 key(appKey)', secret=True)
-        login_app_key_source = 'prompt'
+        app_key = prompt_required('请输入工作协同 key(appKey)', secret=True)
+        app_key_source = 'prompt'
 
     robot_name = input('请输入机器人名称（回车使用服务端默认）: ').strip()
     return {
-        'loginAppKey': login_app_key,
-        'robotName': robot_name,
+        'appKey': app_key,
+        'name': robot_name,
         'avatar': '',
         'groupLabel': '',
         'remark': '',
-        'loginAppKeySource': login_app_key_source,
+        'appKeySource': app_key_source,
     }
 
 
@@ -523,13 +391,9 @@ def print_summary(
     agent_name = stringify(agent.get('name')) or agent_id
     print(f'配置文件: {config_path}')
     print(f'目标 agent: {agent_name} [{agent_id}]')
-    print(f'机器人名称: {inputs["robotName"] or "<服务端默认>"}')
-    print(
-        f'登录 appKey: {"复用已有值" if inputs.get("loginAppKeySource") != "prompt" else "本次输入"}'
-    )
-    print('机器人 appKey: 不向用户索要，创建机器人成功后由服务端返回')
+    print(f'机器人名称: {inputs["name"] or "<服务端默认>"}')
+    print(f'appKey: {"复用已有值" if inputs.get("appKeySource") != "prompt" else "本次输入"}')
     print('头像/分组/备注: 使用默认值')
-    print(f'创建机器人时会绑定: agentId={agent_id}')
     print(f'将写入 channel account: channels.xg_cwork_im.accounts.{agent_id}')
     print('绑定意义: 这台机器人后续收到的消息，会路由到上面选中的 agent。')
     print('使用结果: 以后你在互动页面里给这台机器人发消息，实际上就是在和这个 agent 对话。')
@@ -542,10 +406,7 @@ def print_summary(
 def build_register_body(agent_id: str, inputs: dict[str, str]) -> dict[str, str]:
     body = {'agentId': agent_id}
     for key in ('name', 'avatar', 'groupLabel', 'remark'):
-        if key == 'name':
-            value = inputs.get('robotName', '').strip()
-        else:
-            value = inputs.get(key, '').strip()
+        value = inputs.get(key, '').strip()
         if value:
             body[key] = value
     return body
@@ -572,10 +433,10 @@ def validate_robot_registration(agent_id: str, robot_data: dict[str, Any]) -> st
             f'创建机器人失败: 接口返回的 agentId={returned_agent_id} 与目标 agentId={agent_id} 不一致'
         )
 
-    returned_robot_app_key = stringify(robot_data.get('appKey'))
-    if not returned_robot_app_key:
+    returned_app_key = stringify(robot_data.get('appKey'))
+    if not returned_app_key:
         raise RequestFailure('创建机器人失败: 接口未返回机器人 appKey，无法写入 OpenClaw channel account')
-    return returned_robot_app_key
+    return returned_app_key
 
 
 def print_before_restart(
@@ -584,7 +445,6 @@ def print_before_restart(
     agent_id: str,
     account_id: str,
     robot_name: str,
-    robot_app_key: str,
     interact_url: str,
 ) -> None:
     print_title('配置已完成')
@@ -593,7 +453,6 @@ def print_before_restart(
     print(f'agentId: {agent_id}')
     print(f'accountId: {account_id}')
     print(f'机器人名称: {robot_name}')
-    print(f'机器人 appKey: {mask_secret(robot_app_key)}')
     print(f'互动链接: {interact_url}')
     print('你可以通过这个公司内部链接进入互动页面，直接给机器人发送消息。')
     print('下一步将自动重启 Gateway，使新配置正式生效。')
@@ -606,7 +465,6 @@ def print_success(
     agent_id: str,
     account_id: str,
     robot_name: str,
-    robot_app_key: str,
     overwrite_existing: bool,
     backup_path: Path | None,
     interact_url: str,
@@ -616,7 +474,6 @@ def print_success(
     print(f'agentId: {agent_id}')
     print(f'accountId: {account_id}')
     print(f'机器人名称: {robot_name}')
-    print(f'已写入机器人 appKey: {mask_secret(robot_app_key)}')
     print(f'已写入 channel account: channels.xg_cwork_im.accounts.{account_id}')
     print(f'覆盖旧配置: {"是" if overwrite_existing else "否"}')
     if backup_path:
@@ -642,7 +499,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='交互式配置 OpenClaw xg_cwork_im 机器人')
     parser.add_argument('--dry-run', action='store_true', help='只做检查和摘要，不执行远端调用或本地写入')
     parser.add_argument('--config-file', type=str, help='显式指定要修改的 openclaw.json')
-    parser.add_argument('--app-key', type=str, help='预填登录用工作协同 appKey；提供后不再交互询问。也可使用环境变量 CMS_CONFIG_MYCLAW_APP_KEY')
+    parser.add_argument('--app-key', type=str, help='预填工作协同 appKey；提供后不再交互询问。也可使用环境变量 CMS_CONFIG_MYCLAW_APP_KEY')
     return parser
 
 
@@ -674,8 +531,8 @@ def main() -> int:
             raise RuntimeError('选中的 agent 缺少 id')
 
         existing_state = summarize_existing_state(config, agent_id)
-        prefilled_login_app_key, _ = resolve_prefilled_app_key(args)
-        inputs = collect_inputs(prefilled_login_app_key)
+        prefilled_app_key, _ = resolve_prefilled_app_key(args)
+        inputs = collect_inputs(prefilled_app_key)
 
         print_summary(
             config_path=config_path,
@@ -706,16 +563,16 @@ def main() -> int:
         ensure_preflight_ready(previous_plugin_state, env)
 
         print_title('获取 Access Token')
-        token = get_access_token(inputs['loginAppKey'])
+        token = get_access_token(inputs['appKey'])
         interact_url = build_interact_url(token)
-        print('已通过 cms-auth-skills 用登录 appKey 获取 access-token。')
+        print('已通过 cms-auth-skills 获取 access-token。')
 
         print_title('注册机器人')
         robot_data = register_robot(token, agent_id, inputs)
-        robot_app_key = validate_robot_registration(agent_id, robot_data)
+        final_app_key = validate_robot_registration(agent_id, robot_data)
         final_name = (
             stringify(robot_data.get('name'))
-            or inputs['robotName']
+            or inputs['name']
             or stringify(agent.get('name'))
             or agent_id
         )
@@ -731,7 +588,7 @@ def main() -> int:
         next_config = merge_myclaw_config(
             current_config,
             agent_id=agent_id,
-            robot_app_key=robot_app_key,
+            app_key=final_app_key,
             robot_name=final_name,
             base_url=DEFAULT_BASE_URL,
             ws_base_url=DEFAULT_WS_BASE_URL,
@@ -744,7 +601,6 @@ def main() -> int:
             agent_id=agent_id,
             account_id=agent_id,
             robot_name=final_name,
-            robot_app_key=robot_app_key,
             interact_url=interact_url,
         )
 
@@ -756,7 +612,6 @@ def main() -> int:
             agent_id=agent_id,
             account_id=agent_id,
             robot_name=final_name,
-            robot_app_key=robot_app_key,
             overwrite_existing=overwrite_existing,
             backup_path=backup_path,
             interact_url=interact_url,
