@@ -59,7 +59,7 @@ def list_issues(skill_code: str = '', status: str = '', severity: str = '', api_
     with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
         data = json.loads(resp.read().decode('utf-8'))
 
-    if data.get('resultCode') != 1:
+    if data.get('resultCode') not in (None, 1):
         raise RuntimeError(f"查询失败: {data.get('resultMsg', '未知错误')}")
 
     return data.get('data', [])
@@ -76,7 +76,7 @@ def get_issue_stats(api_base: str = '') -> dict:
     with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
         data = json.loads(resp.read().decode('utf-8'))
 
-    if data.get('resultCode') != 1:
+    if data.get('resultCode') not in (None, 1):
         raise RuntimeError(f"查询统计失败: {data.get('resultMsg', '未知错误')}")
 
     return data.get('data', {})

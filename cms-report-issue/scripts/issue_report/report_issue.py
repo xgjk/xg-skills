@@ -32,6 +32,9 @@ DEFAULT_API_BASE = 'https://skills.mediportal.com.cn'
 API_BASE = DEFAULT_API_BASE
 REPORT_ENDPOINT = '/api/skill/issues/report'
 
+ALLOWED_ISSUE_TYPES = ('bug', 'feature', 'enhancement', 'docs', 'security', 'question')
+ALLOWED_SEVERITIES = ('critical', 'major', 'minor')
+
 
 def _ssl_context():
     ctx = ssl.create_default_context()
@@ -53,6 +56,38 @@ def _get_auth_headers():
     return headers
 
 
+def _signature(skill_code: str, version: str, error_message: str, user_message: str) -> str:
+    import hashlib
+    raw = f"{skill_code}|{version}|{error_message.strip()}|{user_message.strip()}"
+    return hashlib.sha1(raw.encode('utf-8')).hexdigest()
+
+
+def find_duplicate_open_issue(skill_code: str, signature: str, api_base: str = '') -> dict | None:
+    """查询同一 skillCode 下是否已存在等效的 open 问题。失败时静默返回 None。"""
+    base_url = (api_base or API_BASE).rstrip('/')
+    url = f'{base_url}/api/skill/issues/list'
+    payload = {'skillCode': skill_code, 'status': 'open'}
+    body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
+    try:
+        req = urllib.request.Request(url, data=body, headers=_get_auth_headers(), method='POST')
+        with urllib.request.urlopen(req, context=_ssl_context(), timeout=15) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        if data.get('resultCode') not in (None, 1):
+            return None
+        for issue in data.get('data', []) or []:
+            existing_sig = _signature(
+                skill_code,
+                issue.get('version', ''),
+                issue.get('errorMessage', '') or '',
+                issue.get('userMessage', '') or '',
+            )
+            if existing_sig == signature:
+                return issue
+    except Exception:
+        return None
+    return None
+
+
 def report_issue(
     skill_code: str,
     version: str = '1.0.0',
@@ -66,9 +101,20 @@ def report_issue(
     severity: str = 'critical',
     api_base: str = '',
     sync_robot: bool = False,
+    dedupe: bool = True,
 ) -> dict:
     base_url = (api_base or API_BASE).rstrip('/')
     url = f'{base_url}{REPORT_ENDPOINT}'
+
+    if dedupe:
+        sig = _signature(skill_code, version, error_message, user_message)
+        existing = find_duplicate_open_issue(skill_code, sig, api_base)
+        if existing:
+            return {
+                'deduped': True,
+                'message': '检测到相同 open 问题，跳过重复上报',
+                'existing': existing,
+            }
 
     payload = {
         'skillCode': skill_code,
@@ -94,7 +140,7 @@ def report_issue(
         try:
             with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
                 result = json.loads(resp.read().decode('utf-8'))
-                if result.get('resultCode') == 1:
+                if result.get('resultCode') in (None, 1):
                     return result.get('data', result)
                 raise RuntimeError(f"上报失败: {result.get('resultMsg', '未知错误')}")
         except (urllib.error.URLError, urllib.error.HTTPError, OSError) as error:
@@ -161,11 +207,12 @@ def main():
     parser.add_argument('--error', '-e', default='', help='错误信息')
     parser.add_argument('--stack', default='', help='错误堆栈')
     parser.add_argument('--message', '-m', default='', help='用户描述的问题')
-    parser.add_argument('--issue-type', '-t', default='bug', help='问题类型')
-    parser.add_argument('--severity', '-s', default='critical', choices=['critical', 'major', 'minor'], help='严重级别')
+    parser.add_argument('--issue-type', '-t', default='bug', choices=list(ALLOWED_ISSUE_TYPES), help='问题类型')
+    parser.add_argument('--severity', '-s', default='critical', choices=list(ALLOWED_SEVERITIES), help='严重级别')
     parser.add_argument('--stdin', action='store_true', help='从 stdin 读取错误信息')
     parser.add_argument('--api-base', default='', help='后端地址')
     parser.add_argument('--sync-robot', '--sync-github', '--internal', action='store_true', help='是否同步触发机器人任务')
+    parser.add_argument('--no-dedupe', action='store_true', help='跳过重复检测，强制上报')
     args = parser.parse_args()
 
     error_msg = args.error
@@ -191,8 +238,12 @@ def main():
             severity=args.severity,
             api_base=args.api_base,
             sync_robot=args.sync_robot,
+            dedupe=not args.no_dedupe,
         )
-        print('✅ 问题已上报', file=sys.stderr)
+        if isinstance(result, dict) and result.get('deduped'):
+            print('ℹ️ 已存在等效 open 问题，跳过重复上报', file=sys.stderr)
+        else:
+            print('✅ 问题已上报', file=sys.stderr)
         print(json.dumps(result, ensure_ascii=False))
     except RuntimeError as error:
         print(f'❌ {error}', file=sys.stderr)

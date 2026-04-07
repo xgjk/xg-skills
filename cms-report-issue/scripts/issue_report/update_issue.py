@@ -68,7 +68,7 @@ def update_issue(issue_id: str, status: str = '', resolution: str = '', api_base
     except urllib.error.URLError as error:
         raise RuntimeError(f'连接失败: {error.reason}')
 
-    if data.get('resultCode') != 1:
+    if data.get('resultCode') not in (None, 1):
         raise RuntimeError(f"更新失败: {data.get('resultMsg', '未知错误')}")
 
     return data.get('data', data)

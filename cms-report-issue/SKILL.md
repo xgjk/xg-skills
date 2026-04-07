@@ -1,6 +1,6 @@
 ---
 name: cms-report-issue
-description: CMS Skill 问题上报工具，负责提交问题、查看问题列表、解决或关闭问题；供 cms-create-skill 与 cms-push-skill 统一调用
+description: 用于"反馈问题 / 报 bug / 上报错误 / 提交 issue / 查看 Skill 问题列表 / 标记问题已解决 / 关闭问题"。处理 Skill 使用过程中遇到的报错、异常、改进建议；支持 stdin 管道接收错误输出。是 cms-create-skill 与 cms-push-skill 的统一问题反馈入口
 skillCode: cms-report-issue
 dependencies:
   - cms-auth-skills
@@ -8,7 +8,7 @@ dependencies:
 
 # CMS Skill 问题上报工具
 
-**当前版本**: v1.0.0
+**当前版本**: v1.0.1
 
 `cms-report-issue` 只负责问题闭环：
 
