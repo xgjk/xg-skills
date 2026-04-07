@@ -2,11 +2,12 @@
 
 ## 登录换 token
 
+- 本 skill 不再自行实现登录换 token；统一依赖 `cms-auth-skills` 获取 `access-token`。
 - 地址：`GET https://sg-cwork-web.mediportal.com.cn/user/login/appkey`
 - Query：
   - `appCode=cms_gpt`
   - `appKey=<工作协同 key>`
-- 目标：从返回体 `data.xgToken / data.token / data.access-token` 中拿到 `access-token`
+- 目标：由 `cms-auth-skills` 从返回体 `data.xgToken / data.token / data.access-token` 中拿到 `access-token`
 
 ## 创建机器人
 

@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
-from auth_helper import RequestFailure, ensure_result_success, extract_result_data, get_access_token, mask_secret, request_json, stringify
+from http_support import RequestFailure, ensure_result_success, extract_result_data, mask_secret, request_json, stringify
 from openclaw_config import DEFAULT_BASE_URL, DEFAULT_WS_BASE_URL, backup_config, format_existing_state, get_agents, load_config, merge_myclaw_config, restore_config, save_config, summarize_agent, summarize_existing_state
 
 ROBOT_REGISTER_URL = 'https://sg-al-cwork-api.mediportal.com.cn/im/robot/private/register'
@@ -20,6 +20,47 @@ WEB_INTERACT_URL = 'https://sg-al-cwork-web.mediportal.com.cn/xg-claw/web/dist/'
 PLUGIN_ID = 'xg_cwork_im'
 PLUGIN_SPEC = '@xgjktech/xg_cwork_im'
 DEFAULT_CONFIG_PATH = Path('~/.openclaw/openclaw.json').expanduser()
+
+
+def resolve_cms_auth_login_script() -> Path:
+    current = Path(__file__).resolve()
+    candidates: list[Path] = []
+    for parent in (current.parent, *current.parents):
+        candidates.append(parent / 'cms-auth-skills' / 'scripts' / 'auth' / 'login.py')
+        candidates.append(parent / 'skills' / 'cms-auth-skills' / 'scripts' / 'auth' / 'login.py')
+
+    seen: set[str] = set()
+    for candidate in candidates:
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        if candidate.is_file():
+            return candidate
+
+    raise RuntimeError('找不到 cms-auth-skills/scripts/auth/login.py，请先安装 cms-auth-skills')
+
+
+def get_access_token(app_key: str) -> str:
+    normalized = stringify(app_key)
+    if not normalized:
+        raise RequestFailure('登录失败：appKey 不能为空')
+
+    result = subprocess.run(
+        [sys.executable, str(resolve_cms_auth_login_script()), '--ensure', '--app-key', normalized],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if result.returncode != 0:
+        message = (result.stderr or '').strip() or (result.stdout or '').strip() or 'cms-auth-skills 登录失败'
+        raise RequestFailure(message)
+
+    lines = [line.strip() for line in (result.stdout or '').splitlines() if line.strip()]
+    if not lines:
+        raise RequestFailure('登录失败: cms-auth-skills 未返回 access-token')
+    return lines[-1]
 
 
 def print_title(title: str) -> None:
@@ -524,7 +565,7 @@ def main() -> int:
         print_title('获取 Access Token')
         token = get_access_token(inputs['appKey'])
         interact_url = build_interact_url(token)
-        print('登录成功，已获取 access-token。')
+        print('已通过 cms-auth-skills 获取 access-token。')
 
         print_title('注册机器人')
         robot_data = register_robot(token, agent_id, inputs)

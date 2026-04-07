@@ -1,0 +1,8 @@
+{
+  "name": "cms-config-myclaw",
+  "version": "1.0.1",
+  "description": "一键交互式配置自己的 OpenClaw（龙虾）机器人，并查看自己已有的机器人。",
+  "keywords": ["openclaw", "config", "xg_cwork_im", "robot", "setup"],
+  "author": "spzwin",
+  "license": "MIT-0"
+}

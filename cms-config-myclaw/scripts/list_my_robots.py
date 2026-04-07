@@ -4,15 +4,58 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 from datetime import datetime
 from getpass import getpass
+from pathlib import Path
 from typing import Any
 
-from auth_helper import RequestFailure, ensure_result_success, extract_result_message, get_access_token, mask_secret, request_json, stringify
+from http_support import RequestFailure, ensure_result_success, extract_result_message, mask_secret, request_json, stringify
 
 DEFAULT_ROBOT_API_BASE_URL = 'https://cwork-api-test.xgjktech.com.cn'
 ROBOT_LIST_PATH = '/im/robot/getMyRobot'
+
+
+def resolve_cms_auth_login_script() -> Path:
+    current = Path(__file__).resolve()
+    candidates: list[Path] = []
+    for parent in (current.parent, *current.parents):
+        candidates.append(parent / 'cms-auth-skills' / 'scripts' / 'auth' / 'login.py')
+        candidates.append(parent / 'skills' / 'cms-auth-skills' / 'scripts' / 'auth' / 'login.py')
+
+    seen: set[str] = set()
+    for candidate in candidates:
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        if candidate.is_file():
+            return candidate
+
+    raise RuntimeError('找不到 cms-auth-skills/scripts/auth/login.py，请先安装 cms-auth-skills')
+
+
+def get_access_token(app_key: str) -> str:
+    normalized = stringify(app_key)
+    if not normalized:
+        raise RequestFailure('登录失败：appKey 不能为空')
+
+    result = subprocess.run(
+        [sys.executable, str(resolve_cms_auth_login_script()), '--ensure', '--app-key', normalized],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if result.returncode != 0:
+        message = (result.stderr or '').strip() or (result.stdout or '').strip() or 'cms-auth-skills 登录失败'
+        raise RequestFailure(message)
+
+    lines = [line.strip() for line in (result.stdout or '').splitlines() if line.strip()]
+    if not lines:
+        raise RequestFailure('登录失败: cms-auth-skills 未返回 access-token')
+    return lines[-1]
 
 
 def print_title(title: str) -> None:
@@ -147,7 +190,7 @@ def main() -> int:
 
         print_title('获取 Access Token')
         token = get_access_token(app_key)
-        print('登录成功，已获取 access-token。')
+        print('已通过 cms-auth-skills 获取 access-token。')
         print(f'机器人接口地址: {api_base_url}')
 
         robots = fetch_my_robots(token, api_base_url)
