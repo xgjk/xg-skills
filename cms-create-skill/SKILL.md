@@ -8,7 +8,7 @@ dependencies:
 
 # CMS Skill 创建工具
 
-**当前版本**: v1.21.0
+**当前版本**: v1.21.1
 
 > **身份声明**：`cms-create-skill` 现在只负责两件事：发现已有 Skill、按协议创建新 Skill。发布、更新、下架统一转交 `cms-push-skill`；问题反馈统一转交 `cms-report-issue`。
 
