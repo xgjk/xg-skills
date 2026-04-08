@@ -1,12 +1,12 @@
 ---
 name: cms-push-skill
 description: 用于"发布 Skill / 上架 Skill / 推送 Skill / 更新已发布的 Skill / 下架 Skill / 把本地 Skill 上传到平台 / 同步到 ClawHub 或 GitHub"。一键完成 打包 → 七牛上传 → 平台注册/更新/下架。需要先通过 cms-auth-skills 取得 token。问题反馈请用 cms-report-issue
-skillCode: cms-push-skill
+skillcode: cms-push-skill
 dependencies:
   - cms-auth-skills
 ---
 
-**当前版本**: v1.6.1
+**当前版本**: v1.6.2
 
 # cms-push-skill
 

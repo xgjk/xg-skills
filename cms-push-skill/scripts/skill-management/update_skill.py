@@ -5,7 +5,7 @@
 用途：更新已注册 Skill 的信息（名称、描述、下载地址等）（ClawHub 协议格式）
 
 使用方式：
-  python3 cms-push-skill/scripts/skill-management/update_skill.py --code <code> [--name <name>] [--description <desc>] [--download-url <url>] [--label <label>] [--version <ver>] [--internal]
+  python3 cms-push-skill/scripts/skill-management/update_skill.py --code <code> [--name <name>] [--description <desc>] [--download-url <url>] [--label <label>] [--version <ver>]
 
 参数说明：
   --code          Skill 唯一标识（必须）
@@ -14,7 +14,6 @@
   --download-url  新的下载地址
   --label         新的标签（逗号分隔）
   --version       版本号（semver 格式，如 1.2.0）
-  --internal      标记为内部 Skill
 
 环境变量：
   XG_USER_TOKEN  — access-token（必须）
@@ -70,14 +69,11 @@ def build_upgrade_payload(args) -> dict:
     if args.description:
         payload["description"] = args.description
     
-    if args.label or args.internal:
+    if args.label:
         tags = [t.strip() for t in args.label.split(",") if t.strip()] if args.label else []
         payload["metadata"] = {
             "openclaw": {
                 "tags": tags,
-            },
-            "xgjk": {
-                "isInternal": args.internal,
             },
         }
 
@@ -93,7 +89,6 @@ def main():
     parser.add_argument("--label", default="", help="新的标签（逗号分隔）")
     parser.add_argument("--version", default="", help="版本号（semver 格式，如 1.2.0）")
     parser.add_argument("--change-log", default="", help="升级说明 (可选)")
-    parser.add_argument("--internal", action="store_true", help="标记为内部 Skill")
     args = parser.parse_args()
 
     token = get_token()

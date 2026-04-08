@@ -27,12 +27,7 @@
   --update        更新模式（默认为注册模式）
   --output        ZIP 输出路径（可选）
   --file-key      七牛文件 key（可选，默认自动生成）
-  --internal      标记为内部 Skill（默认发布链路）
   --external      标记为外部 Skill（使用 ClawHub 下载地址）
-  --sync-clawhub  同步到 ClawHub（内部 Skill 默认启用，外部 Skill 不支持）
-  --no-sync-clawhub  不同步到 ClawHub
-  --sync-github   同步到 GitHub（内部 Skill 默认启用，外部 Skill 可手动启用）
-  --no-sync-github  不同步到 GitHub
 
 环境变量：
   XG_USER_TOKEN  — access-token（必须）
@@ -43,20 +38,17 @@ import os
 import json
 import time
 import argparse
-import requests
 from urllib.parse import quote
 
 # 导入同目录下的模块
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, script_dir)
 
-from common import API_BASE, get_headers, get_token, parse_api_response
+from common import get_token
 from pack_skill import pack_skill
 from upload_to_qiniu import get_qiniu_token, upload_file
 from register_skill import call_api as register_api
 from update_skill import call_api as update_api
-
-ROBOT_SYNC_URL = f"{API_BASE}/api/robot/skill-sync"
 
 EXTERNAL_DOWNLOAD_URL_TEMPLATE = "https://wry-manatee-359.convex.site/api/v1/download?slug={}"
 
@@ -65,7 +57,7 @@ def build_external_download_url(skill_code: str) -> str:
     return EXTERNAL_DOWNLOAD_URL_TEMPLATE.format(quote(skill_code, safe=""))
 
 
-def build_register_payload(args, download_url: str, is_internal: bool) -> dict:
+def build_register_payload(args, download_url: str) -> dict:
     """构造 ClawHub 协议格式的注册 payload。"""
     tags = [t.strip() for t in args.label.split(",") if t.strip()] if args.label else []
     return {
@@ -77,12 +69,11 @@ def build_register_payload(args, download_url: str, is_internal: bool) -> dict:
         "downloadUrl": download_url,
         "metadata": {
             "openclaw": {"tags": tags},
-            "xgjk": {"isInternal": is_internal},
         },
     }
 
 
-def build_update_payload(args, download_url: str, is_internal: bool) -> dict:
+def build_update_payload(args, download_url: str) -> dict:
     """构造 ClawHub 协议格式的更新 payload。"""
     tags = [t.strip() for t in args.label.split(",") if t.strip()] if args.label else []
     payload = {
@@ -90,7 +81,6 @@ def build_update_payload(args, download_url: str, is_internal: bool) -> dict:
         "downloadUrl": download_url,
         "metadata": {
             "openclaw": {"tags": tags},
-            "xgjk": {"isInternal": is_internal},
         },
     }
     if args.name:
@@ -100,33 +90,6 @@ def build_update_payload(args, download_url: str, is_internal: bool) -> dict:
     if args.version:
         payload["version"] = args.version
     return payload
-
-
-def dispatch_skill_sync(token: str, action: str, args, download_url: str,
-                        sync_clawhub: bool, sync_github: bool) -> dict:
-    """调用 /api/robot/skill-sync 派发机器人同步任务。"""
-    headers = get_headers(token)
-    payload = {
-        "action": action,
-        "skillCode": args.code,
-        "name": args.name or args.code,
-        "description": args.description or "",
-        "version": args.version or "0.0.1",
-        "downloadUrl": download_url,
-        "deleted": False,
-        "syncClawhub": sync_clawhub,
-        "syncGithub": sync_github,
-    }
-
-    response = requests.post(
-        ROBOT_SYNC_URL,
-        headers=headers,
-        json=payload,
-        verify=False,
-        timeout=60,
-    )
-    response.raise_for_status()
-    return parse_api_response(response, "派发同步任务")
 
 
 def main():
@@ -140,38 +103,13 @@ def main():
     parser.add_argument("--update", action="store_true", help="更新模式（默认为注册模式）")
     parser.add_argument("--output", default="", help="ZIP 输出路径")
     parser.add_argument("--file-key", default="", help="七牛文件 key")
-    parser.add_argument("--internal", action="store_true", help="标记为内部 Skill")
     parser.add_argument("--external", action="store_true", help="标记为外部 Skill（使用 ClawHub 下载地址）")
     parser.add_argument("--corp-id", default=os.environ.get("XG_CORP_ID", ""), help="企业 ID（用于获取七牛上传凭证）")
-    parser.add_argument("--sync-clawhub", dest="sync_clawhub", action="store_true", default=None,
-                        help="同步到 ClawHub（内部 Skill 默认启用）")
-    parser.add_argument("--no-sync-clawhub", dest="sync_clawhub", action="store_false",
-                        help="不同步到 ClawHub")
-    parser.add_argument("--sync-github", dest="sync_github", action="store_true", default=None,
-                        help="同步到 GitHub（内部 Skill 默认启用）")
-    parser.add_argument("--no-sync-github", dest="sync_github", action="store_false",
-                        help="不同步到 GitHub")
     args = parser.parse_args()
 
     token = get_token()
 
-    if args.internal and args.external:
-        print("错误: --internal 和 --external 不能同时使用", file=sys.stderr)
-        sys.exit(1)
-
     is_external = args.external
-    is_internal = not is_external
-
-    # 解析同步标志：内部默认两者都推；外部默认不推 clawhub，github 需手动指定
-    if is_internal:
-        sync_clawhub = args.sync_clawhub if args.sync_clawhub is not None else True
-        sync_github = args.sync_github if args.sync_github is not None else True
-    else:
-        # 外部 Skill 不支持推送到 ClawHub
-        if args.sync_clawhub is True:
-            print("警告: 外部 Skill 不支持推送到 ClawHub，已忽略 --sync-clawhub", file=sys.stderr)
-        sync_clawhub = False
-        sync_github = args.sync_github if args.sync_github is not None else False
 
     mode = "更新" if args.update else "注册"
     if not args.update and not args.name:
@@ -180,7 +118,7 @@ def main():
 
     skill_name = os.path.basename(os.path.abspath(args.skill_dir))
 
-    if is_internal:
+    if not is_external:
         # ── Step 1: 打包 ──
         zip_output = args.output or f"{skill_name}.zip"
         print(f"\n{'='*50}", file=sys.stderr)
@@ -215,47 +153,22 @@ def main():
 
     # ── Step 3: 注册/更新 ──
     print(f"\n{'='*50}", file=sys.stderr)
-    print(f"[{3 if is_internal else 2}/{3 if is_internal else 2}] {mode} Skill (code={args.code})", file=sys.stderr)
+    print(f"[{3 if not is_external else 2}/{3 if not is_external else 2}] {mode} Skill (code={args.code})", file=sys.stderr)
     print(f"{'='*50}", file=sys.stderr)
 
     if args.update:
-        payload = build_update_payload(args, download_url, is_internal)
+        payload = build_update_payload(args, download_url)
         result = update_api(token, payload)
     else:
-        payload = build_register_payload(args, download_url, is_internal)
+        payload = build_register_payload(args, download_url)
         result = register_api(token, payload)
 
     print(f"\n{'='*50}", file=sys.stderr)
     print(f"✅ {mode}完成!", file=sys.stderr)
     print(f"  Skill: {args.code}", file=sys.stderr)
     print(f"  下载地址: {download_url}", file=sys.stderr)
+    print(f"  后台同步: 平台接口会自动处理 ClawHub / GitHub 机器人同步", file=sys.stderr)
     print(f"{'='*50}", file=sys.stderr)
-
-    # ── Step 4: 机器人同步（ClawHub / GitHub） ──
-    if sync_clawhub or sync_github:
-        targets = []
-        if sync_clawhub:
-            targets.append("ClawHub")
-        if sync_github:
-            targets.append("GitHub")
-        target_str = " + ".join(targets)
-
-        print(f"\n{'='*50}", file=sys.stderr)
-        print(f"[机器人同步] 派发 {target_str} 同步任务...", file=sys.stderr)
-        print(f"{'='*50}", file=sys.stderr)
-
-        try:
-            action = "update" if args.update else "publish"
-            sync_result = dispatch_skill_sync(
-                token, action, args, download_url, sync_clawhub, sync_github
-            )
-            print(f"✅ 机器人同步任务已派发: {target_str}", file=sys.stderr)
-            result["robotSync"] = sync_result
-        except Exception as e:
-            print(f"⚠️ 机器人同步任务派发失败: {e}", file=sys.stderr)
-            result["robotSyncError"] = str(e)
-    else:
-        print(f"\n跳过机器人同步（未指定 --sync-clawhub / --sync-github）", file=sys.stderr)
 
     # 输出完整结果到 stdout
     print(json.dumps(result, ensure_ascii=False, indent=2))
