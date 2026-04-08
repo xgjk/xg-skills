@@ -8,7 +8,7 @@ priority: 1
 
 # cms-auth-skills
 
-**版本**: v2.3.2
+**版本**: v2.3.4
 
 ## 定位
 
