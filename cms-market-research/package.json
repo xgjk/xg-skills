@@ -1,0 +1,10 @@
+{
+  "name": "cms-market-research",
+  "version": "1.0.0",
+  "description": "Conduct structured market research on any industry, competitor, or opportunity",
+  "main": "SKILL.md",
+  "keywords": ["market-research", "analysis", "strategy", "competitor-analysis", "market-sizing", "swot", "porters-five-forces"],
+  "author": "xgjk",
+  "license": "MIT",
+  "files": ["SKILL.md", "README.md", "references", "templates"]
+}
