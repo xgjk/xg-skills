@@ -2,7 +2,7 @@
 
 <div align="center">
   <img src="https://img.shields.io/badge/OpenClaw-Skill-blue.svg" alt="OpenClaw Skill">
-  <img src="https://img.shields.io/badge/version-2.1.0-green.svg" alt="Version 2.1.0">
+  <img src="https://img.shields.io/badge/version-2.0.0-green.svg" alt="Version 2.0.0">
   <img src="https://img.shields.io/badge/Architecture-Single%_Source_of_Truth-orange" alt="SSOT">
 </div>
 
@@ -14,7 +14,7 @@ TPR Framework 是专为 **OpenClaw** 在 Multi-Agent 协作场景下设计的方
 
 ---
 
-## 🌟 核心特性 (v2.1.0 满血版)
+## 🌟 核心特性 (v2.0.0 满血版)
 
 *   **🛡️ “三省”结构化防线**
     *   **编排者 (Orchestrator)**：大脑中枢。遵循 *Yield-after-spawn* 和 *Announce-then-act* 原则，只调度，绝不写脏代码。
@@ -39,7 +39,7 @@ TPR Framework 是专为 **OpenClaw** 在 Multi-Agent 协作场景下设计的方
 ```text
 tpr-framework/
 ├── SKILL.md                          # 150行以内的核心语义触发器
-├── _meta.json                        # 版本控制信息 v2.1.0
+├── _meta.json                        # 版本控制信息 v2.0.0
 ├── design/                           # 架构蓝图与设计历史记录
 ├── references/                       # 【核心大脑区】运行时加载文档
 │   ├── definition.md                 # TPR 本质是什么
