@@ -1,7 +1,6 @@
 ---
 name: notex-skills
 description: NoteX 技能路由网关索引（access-token 鉴权，由 cms-auth-skills 统一提供），覆盖内容生产（PPT/视频/音频/报告/脑图/测验/闪卡/信息图）、运营数据问答与洞察、笔记本管理（列表/统计/创建/追加来源）、来源索引与详情定位、首页登录链接生成。
-skillcode: notex-skills
 dependencies:
   - cms-auth-skills
 ---

@@ -22,20 +22,22 @@ NoteX Notebook 来源读取脚本（可独立执行）
 import argparse
 import json
 import os
-import requests
-import warnings
-
-# 禁用 InsecureRequestWarning (因为 verify=False)
-warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
-
-SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-if SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, SCRIPTS_DIR)
-
-from self_update import maybe_self_update
+import ssl
+import subprocess
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 
 PROD_NOTEX_HOST = "notex.aishuo.co"
 PROD_NOTEX_BASE_URL = "https://notex.aishuo.co/noteX"
+
+
+def _ssl_context():
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
 
 
 def _log(msg: str):
@@ -43,23 +45,18 @@ def _log(msg: str):
 
 
 def _request_json(url: str, *, method: str = "GET", headers: dict = None,
-                  body: dict = None, timeout: int = 60) -> dict:
-    """发起 HTTP 请求并返回 JSON。"""
+                  timeout: int = 60) -> dict:
+    req_headers = dict(headers or {})
+    req = urllib.request.Request(url, headers=req_headers, method=method)
     try:
-        response = requests.request(
-            method,
-            url,
-            json=body,
-            headers=headers,
-            verify=False,
-            allow_redirects=True,
-            timeout=timeout,
-        )
-        response.raise_for_status()
-        payload = response.json()
-    except requests.exceptions.RequestException as e:
-        error_body = e.response.text if e.response is not None else str(e)
-        raise RuntimeError(f"请求失败 ({method} {url}): {error_body}") from e
+        with urllib.request.urlopen(req, context=_ssl_context(), timeout=timeout) as resp:
+            raw = resp.read().decode("utf-8")
+            payload = json.loads(raw) if raw.strip() else {}
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"HTTP {e.code}: {error_body}") from e
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"请求失败: {e.reason}") from e
 
     if isinstance(payload, dict) and "resultCode" in payload:
         if payload["resultCode"] != 1:
@@ -180,8 +177,6 @@ def main():
                         help="生产地址（仅支持 https://notex.aishuo.co/noteX 或 /noteX/openapi）")
     parser.add_argument("--context-json", default="", help="鉴权上下文 JSON（可选，传给 cms-auth-skills）")
     args = parser.parse_args()
-
-    maybe_self_update()
 
     try:
         base_url = _normalize_prod_base_url(args.base_url or PROD_NOTEX_BASE_URL)

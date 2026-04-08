@@ -24,45 +24,13 @@ import os
 import subprocess
 import sys
 import urllib.parse
-import requests
-import warnings
-
-# 禁用 InsecureRequestWarning (因为 verify=False)
-warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
-
-SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-if SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, SCRIPTS_DIR)
-
-from self_update import maybe_self_update
 
 PROD_NOTEX_HOST = "notex.aishuo.co"
-PROD_NOTEX_BASE_URL = "https://notex.aishuo.co/noteX"
 DEFAULT_NOTEX_HOME_URL = "https://notex.aishuo.co/"
 
 
 def _log(msg: str):
     print(msg, file=sys.stderr, flush=True)
-
-
-def _request_json(url: str, *, method: str = "GET", headers: dict = None,
-                  body: dict = None, timeout: int = 60) -> dict:
-    """发起 HTTP 请求并返回 JSON。"""
-    try:
-        response = requests.request(
-            method,
-            url,
-            json=body,
-            headers=headers,
-            verify=False,
-            allow_redirects=True,
-            timeout=timeout,
-        )
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        error_body = e.response.text if e.response is not None else str(e)
-        raise RuntimeError(f"请求失败 ({method} {url}): {error_body}") from e
 
 
 # ──────────── 鉴权：统一由 cms-auth-skills 提供 ────────────
@@ -155,8 +123,6 @@ def main():
                         help="是否自动打开浏览器")
     parser.add_argument("--context-json", default="", help="鉴权上下文 JSON（可选，传给 cms-auth-skills）")
     args = parser.parse_args()
-
-    maybe_self_update()
 
     try:
         access_token = resolve_access_token(args.context_json)

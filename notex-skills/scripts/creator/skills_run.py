@@ -25,21 +25,15 @@ NoteX Skills 通用脚本（可独立执行）
 """
 
 import argparse
-import sys
-import os
 import json
-import requests
-import warnings
+import os
+import ssl
+import subprocess
+import sys
 import time
-
-# 禁用 InsecureRequestWarning (因为 verify=False)
-warnings.filterwarnings("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
-
-SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-if SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, SCRIPTS_DIR)
-
-from self_update import maybe_self_update
+import urllib.error
+import urllib.parse
+import urllib.request
 
 # ===================== 配置 =====================
 NOTEX_BASE_URL = "https://notex.aishuo.co/noteX"
@@ -63,6 +57,13 @@ ALLOWED_SKILLS = list(SKILL_INFO.keys())
 # ================================================
 
 
+def _ssl_context():
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+
 def _log(msg: str):
     print(msg, file=sys.stderr, flush=True)
 
@@ -70,21 +71,22 @@ def _log(msg: str):
 def _request_json(url: str, *, method: str = "GET", headers: dict = None,
                   body: dict = None, timeout: int = 60) -> dict:
     """发起 HTTP 请求并返回 JSON。"""
+    req_headers = dict(headers or {})
+    req_data = None
+    if body is not None:
+        req_headers.setdefault("Content-Type", "application/json")
+        req_data = json.dumps(body).encode("utf-8")
+
+    req = urllib.request.Request(url, data=req_data, headers=req_headers, method=method)
     try:
-        response = requests.request(
-            method,
-            url,
-            json=body,
-            headers=headers,
-            verify=False,
-            allow_redirects=True,
-            timeout=timeout,
-        )
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        error_body = e.response.text if e.response is not None else str(e)
-        raise RuntimeError(f"请求失败 ({method} {url}): {error_body}") from e
+        with urllib.request.urlopen(req, context=_ssl_context(), timeout=timeout) as resp:
+            raw = resp.read().decode("utf-8")
+            return json.loads(raw)
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"HTTP {e.code}: {error_body}") from e
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"请求失败: {e.reason}") from e
 
 
 def _validate_prod_url(raw_url: str, expected_host: str, label: str) -> str:
@@ -262,8 +264,6 @@ def main():
     parser.add_argument("--require", default="", help="生成要求/风格（可选）")
     parser.add_argument("--context-json", default="", help="鉴权上下文 JSON（可选，传给 cms-auth-skills）")
     args = parser.parse_args()
-
-    maybe_self_update()
 
     # 参数校验
     if args.skill == "ops-chat":
