@@ -4,7 +4,7 @@ description: 用于"安装 Skill / 下载 Skill / 找一个能做 X 的 Skill / 
 skillCode: cms-find-skills
 ---
 
-**当前版本**: 1.6.0
+**当前版本**: v1.6.0
 
 # cms-find-skills
 
@@ -18,11 +18,9 @@ skillCode: cms-find-skills
 ## 当前目录
 
 - `SKILL.md`
-- `openapi/skill-registry/get-skills.md`
 - `references/skill-registry/README.md`
 - `scripts/skill_registry/get_skills.py`
 - `scripts/skill_registry/install_skill.py`
-- `scripts/skill_registry/verify_skill.py`
 
 所有说明文档统一使用 Markdown；本 Skill 不再维护旧接口文档目录。
 
